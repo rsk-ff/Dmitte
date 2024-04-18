@@ -1,7 +1,7 @@
 # %%
 from dmitte import run_wofost
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
-from dmitte.transfer_equotions import transfer_rates, transfer_equotions
+from dmitte.transfer_equotions import transfer_rates, solve_con
 from dmitte.para_constant import LAMBDA_T_H
 
 import numpy as np
@@ -31,23 +31,10 @@ plantfx = Calc_plant(pcse_results, start_date, end_date, plant_type, stability, 
 k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
 # %% 02 求解库室浓度
-n_t_step = len(k_array)
+inits = [0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+As = solve_con(inits, k_array, LAMBDA_T_H)
 
-As = np.zeros((n_t_step + 1, 10))
-
-As[0] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0] # 设定初始浓度 (以实际为准)
-
-# 循环求解
-for i in range(n_t_step):  # 循环次数对应时间步长数
-    # print(i)
-    equotions_with_params = partial(transfer_equotions, transfer_rates=k_array[i], LAMBDA_T=LAMBDA_T_H)
-    
-    sol = solve_ivp(equotions_with_params, t_span=(0, 1), y0=As[i], t_eval=[1])
-
-    As[i + 1] = (sol.y).transpose()
-
-
-# 如果需要可以把迁移率和浓度结果输出为 CSV 表格查看
+# %% 如果需要可以把迁移率和浓度结果输出为 CSV 表格查看
 # 转换为 Dataframe
 columns_k = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2',
               'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 
