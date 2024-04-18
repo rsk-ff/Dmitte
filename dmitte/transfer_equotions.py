@@ -1,5 +1,7 @@
 # %%
 import numpy as np
+from functools import partial
+from scipy.integrate import solve_ivp
 
 from dmitte import para_constant
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
@@ -102,20 +104,9 @@ def transfer_rates(char: str,
         kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
         kbh_bo = plantfx.TROBT
 
-    # elif plant_type.upper() == 'GRASS':
-    #     ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
-    #     ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.6
-    #     ks3_bh = 0
-    #     ks1_fh = 0
-    #     ks2_fh = 0
-    #     ks3_fh = 0
-    #     kbh_fh = 0
-    #     kfh_bh = 0
-    #     kbh_fo = 0
-    #     kbh_bo = 0  # TODO: 补充 kbh_bo
-
     else:
         raise ValueError("Unsupported plant type: '{}'.".format(plant_type))
+
 
     k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
               ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
@@ -124,11 +115,10 @@ def transfer_rates(char: str,
 
     n_t_step = len(airfx.U10)
 
-    print([type(k[0]) if not np.isscalar(k) else 1 for k in k_list])
-
     k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
 
     return k_array.T
+
 
 def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
     '''
@@ -141,7 +131,10 @@ def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
     LAMBDA_T: d-1 or h-1, 氚的衰变常数, 单位与迁移率保持一致
     '''
     A_a1, A_s0, A_a2, A_s1, A_s2, A_s3, A_bh, A_bo, A_fh, A_fo = y
-    ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh = transfer_rates
+    ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, ka2_s1, \
+        ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, ks3_bh, ka2_a2, \
+        kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, kbh_fh, kbh_fo, ks1_fh, \
+        ks2_fh, ks3_fh = transfer_rates
 
     
     dA_a1_dt = ks0_a1 * A_s0 - (ka1_a1 + ka1_a2 + ka1_s0 + LAMBDA_T) * A_a1
@@ -157,5 +150,34 @@ def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
 
     return dA_a1_dt, dA_s0_dt, dA_a2_dt, dA_s1_dt, dA_s2_dt, dA_s3_dt, dA_bh_dt, dA_bo_dt, dA_fh_dt, dA_fo_dt
 
-def solve_con():
-    pass # TODO: 求解浓度函数
+
+def solve_con(inits, k_array, LAMBDA_T):
+    '''
+    计算各库室浓度
+
+    Parameters:
+    ---
+    initial: 初始浓度
+    k_array: 迁移率矩阵
+    LAMBDA_T: 氚的衰变常数
+
+    Return:
+    ---
+    As: 库室浓度矩阵
+    '''
+    n_t_step = len(k_array)
+
+    As = np.zeros((n_t_step + 1, 10))
+    As[0] = inits
+    
+    # 循环求解
+    for i in range(n_t_step):  # 循环次数对应时间步长数
+        equotions_with_params = partial(transfer_equotions, transfer_rates=k_array[i], LAMBDA_T=LAMBDA_T)
+        
+        sol = solve_ivp(equotions_with_params, t_span=(0, 1), y0=As[i], t_eval=[1])
+                        
+        print(type(sol.y), As[i])
+        As[i + 1] = sol.y.squeeze()
+        print(i)
+
+    return As
