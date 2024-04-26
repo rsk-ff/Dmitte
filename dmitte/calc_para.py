@@ -1,10 +1,6 @@
 import pandas as pd
 import numpy as np
 from dmitte import para_constant
-import matplotlib.pyplot as plt
-
-plt.rcParams['font.family'] = 'Microsoft YaHei'
-plt.rcParams['font.size'] = 10
 
 # %%
 
@@ -305,7 +301,6 @@ class Calc_soil(Calc_air):
 
         Sa1 = calc_SS(thetMAX_layers[0], theta[:,0], theta_1500_layers)
         Sb1 = calc_SS(thetMAX_layers[1], theta[:,1], theta_1500_layers)
-        print(Sb1[1244])
 
          # Calculate the gradient of hydraulic conductivity
         delta_K = K1 - K2
