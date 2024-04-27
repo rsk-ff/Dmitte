@@ -84,9 +84,9 @@ def transfer_rates(char: str,
         ks1_bh = 0
         ks2_bh = 0
         ks3_bh = 0
-        ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
-        ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
+        ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
+        ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
+        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
         kbh_fh = (np.log(2) / 2) 
         kfh_bh = kbh_fh * (plantfx.plant_w / plantfx.friut_w ) 
         kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
@@ -151,13 +151,14 @@ def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
     return dA_a1_dt, dA_s0_dt, dA_a2_dt, dA_s1_dt, dA_s2_dt, dA_s3_dt, dA_bh_dt, dA_bo_dt, dA_fh_dt, dA_fo_dt
 
 
-def solve_con(inits, k_array, LAMBDA_T):
+def solve_con(char, init_con, k_array, LAMBDA_T):
     '''
     计算各库室浓度
 
     Parameters:
     ---
-    initial: 初始浓度
+    char: 'HT' or 'HTO'
+    init_con: 初始浓度, Bq/m2
     k_array: 迁移率矩阵
     LAMBDA_T: 氚的衰变常数
 
@@ -165,19 +166,43 @@ def solve_con(inits, k_array, LAMBDA_T):
     ---
     As: 库室浓度矩阵
     '''
-    n_t_step = len(k_array)
+    def next_con(Ai, ki):
+        '''
+        定义单步求解过程, 请勿外部调用
+        '''
+        equotions_with_params = partial(transfer_equotions, transfer_rates=ki, LAMBDA_T=LAMBDA_T)
+        sol = solve_ivp(equotions_with_params, t_span=(0, 1), y0=Ai, t_eval=[1])
+        return sol.y.squeeze()
 
+    k_array[0, 0] = 0
+    k_array[0, 17] = 0
+
+    n_t_step = len(k_array)
     As = np.zeros((n_t_step + 1, 10))
-    As[0] = inits
-    
-    # 循环求解
-    for i in range(n_t_step):  # 循环次数对应时间步长数
-        equotions_with_params = partial(transfer_equotions, transfer_rates=k_array[i], LAMBDA_T=LAMBDA_T)
+
+    if char == 'HT':
+        As[0] = [init_con, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        As[1] = next_con(As[0], k_array[0])
+
+        As[1, 0] = 0
+        As[1, 2] = 0
         
-        sol = solve_ivp(equotions_with_params, t_span=(0, 1), y0=As[i], t_eval=[1])
-                        
-        print(type(sol.y), As[i])
-        As[i + 1] = sol.y.squeeze()
-        print(i)
+        for i in range(1, n_t_step):
+            As[i + 1] = next_con(As[i], k_array[i])
+
+    elif char == 'HTO':
+        As[0] = [0, 0, init_con, 0, 0, 0, 0, 0, 0, 0]
+
+        As[1] = next_con(As[0], k_array[0])
+
+        As[1, 0] = 0
+        As[1, 2] = 0
+        
+        for i in range(1, n_t_step):
+            As[i + 1] = next_con(As[i], k_array[i])
+
+    else:
+        raise ValueError("Unsupported char: '{}'.".format(char))
 
     return As

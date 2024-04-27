@@ -6,8 +6,6 @@ from dmitte.para_constant import LAMBDA_T_H
 
 import numpy as np
 import pandas as pd
-from functools import partial
-from scipy.integrate import solve_ivp
 
 # %% 01 计算迁移率
 plantmodel = ['sugarbeet', 'Sugarbeet_601', 'ec2.soil', 'sugarbeet_calendar.agro']
@@ -32,7 +30,7 @@ k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
 # %% 02 求解库室浓度
 inits = [0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
-As = solve_con(inits, k_array, LAMBDA_T_H)
+As = solve_con(inits, np.abs(k_array), LAMBDA_T_H)
 
 # %% 如果需要可以把迁移率和浓度结果输出为 CSV 表格查看
 # 转换为 Dataframe
