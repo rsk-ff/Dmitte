@@ -318,7 +318,7 @@ class Calc_soil(Calc_air):
 
 
         # Using Darcy's law to calculate Va_b for the first pair of layers
-        Va_b1 = (K_12 * (Sa1 - Sb1) / ((100 / 1000) + ((theta_s_layers + theta_s_layers) / 2))) - 1
+        Va_b1 = (K_12 * (Sb1 - Sa1) / ((100 / 1000) + ((theta_s_layers + theta_s_layers) / 2))) - 1
         self.Va_b1 = Va_b1 / 24
         
         # calculation for the second and third layer:
@@ -342,7 +342,7 @@ class Calc_soil(Calc_air):
         Sb2 = calc_SS(thetMAX_layers[2], theta[:,2], theta_1500_layers)
 
         # Using Darcy's law to calculate Va_b for the second pair of layers
-        Va_b2 = (K_23 * (Sa2 - Sb2) / ((150 / 1000) + ((theta_s_layers + theta_s_layers) / 2))) - 1
+        Va_b2 = (K_23 * (Sb2 - Sa2) / ((150 / 1000) + ((theta_s_layers + theta_s_layers) / 2))) - 1
         self.Va_b2 = Va_b2 / 24
 
 
@@ -500,7 +500,7 @@ class Calc_plant(Calc_air):
         RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
         RSTOMA = self.RC1 * 100.                # 植物冠层气孔阻力因子,单位 m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = (es - self.ea * self.r_h)         # 空气实际与饱和的蒸汽压只差,N m-2
+        EFEUDE = (es - self.ea * self.r_h)         # 空气实际与饱和的蒸汽压之差,N m-2
         DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
         
         GAM = 0.67                            # 大气干湿度压力系数
@@ -544,8 +544,10 @@ class Calc_plant(Calc_air):
 
         # RESP = 0.36 * PAKT0 + 1.67E-4 * self.tagp     # 根据公式的 
         # PAKT = PAKT0 - RESP 
-        PAKT = (self.Pco -self.rd)/240
-        self.TROBT = PAKT * CO2DRY * DISSOZ / PROD[self.ICOMP-1]
+        PAKT = (self.Pco -self.rd) * 1000 / 1e4 / 24 / 30 * 44
+        PACT = PAKT * CO2DRY
+        Tm = 2.0E-2 /24 
+        self.TROBT =  PACT / PROD[self.ICOMP-1] * Tm * (1.75/0.25) * DISSOZ# / PROD[self.ICOMP-1]
 
 
     # 计算植物水库室中的水含量plant_w 和 有机物含量plant_o;kg/m2; 
@@ -555,7 +557,7 @@ class Calc_plant(Calc_air):
         self.plant_o = self.tagp / 1E4
         self.plant_oh = self.plant_o * 0.8 
         # 计算植物果实库室中的水含量friut_w 和 有机物含量friut_o;
-        self.friut_w = np.maximum((self.twso / 1E4 * (1 - drymatter) / drymatter), 20)
+        self.friut_w = self.twso / 1E4 * (1 - drymatter) / drymatter
         self.friut_wh = self.friut_w * 0.11   # 植物水中氢含量占水含量的11%；
         self.friut_o = self.twso /1E4 * 0.9
         self.friut_oh = self.friut_o * 0.8    # 植物有机质中氢含量占8%；
