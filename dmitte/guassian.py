@@ -22,10 +22,10 @@ def calc_sigmaxyz(stability, x):
         sigmaz = 0.016 * x * (1 + 0.0003 * x) ** (-1)
     else:
         raise ValueError('Invalid stability class')
-    sigma = [sigmax, sigmay, sigmaz]
-    return sigma
+    return sigmax, sigmay, sigmaz
 
-def gaussian_puff_model(x, y, z, t, Q_total, UU, HEG, stability, t_release, puff_num = 600):
+
+def gaussian_puff_model(x, y, z, t, Q_total, UU, HEG, stability, t_release, puff_num: int = 600, humidity=50, rain=0, temperature=25):
     '''
     高斯烟团模型计算瞬时浓度
 
@@ -39,18 +39,16 @@ def gaussian_puff_model(x, y, z, t, Q_total, UU, HEG, stability, t_release, puff
     HEG: 烟团的有效高度, m
     stability: 大气稳定度, 1 ~ 6 对应 A ~ F
     puff_num: 烟团离散数量
+    humidity: 相对湿度, %
+    rain: 降雨量, mm
+    temperature: 温度, ℃
 
     Return:
     ---
     con : t时刻空间(x,y,z)上的浓度, Bq/m3
     '''
-    # 使用Briggs经验公式 计算大气稳定度：
-    sigma = calc_sigmaxyz(stability, x)
-    sigmax = sigma[0]
-    sigmay = sigma[1]
-    sigmaz = sigma[2]
-
-    def single_gaussian(Q_single, t_single):
+    
+    def single_gaussian(Q_single, t_single, t_rain):
         '''
         计算单个烟团的行为
 
@@ -58,26 +56,35 @@ def gaussian_puff_model(x, y, z, t, Q_total, UU, HEG, stability, t_release, puff
         ---
         Q_single: 单个烟团的释放量
         t_single: 该烟团释放后的时间
+        t_rain: 烟团被雨冲刷的时间
 
         Return:
         ---
         result: 单个烟团导致的浓度
         '''
         np.seterr(divide='ignore', invalid='ignore')  # 消除被除数为0的警告
-        exp0 = Q_single / ((2 * np.pi) ** 1.5 * sigmax * sigmay * sigmaz)
-        exp1 = np.exp(-0.5 * ((x - UU * t_single) ** 2) / (sigmax ** 2))
-        exp2 = np.exp(- y ** 2 / sigmay ** 2)
-        exp3 = np.exp(-0.5 * ((z - HEG) ** 2) / sigmaz ** 2)
-        exp4 = np.exp(-0.5 * ((z + HEG) ** 2) / sigmaz ** 2)
-        result = exp0 * exp1 * exp2 * (exp3 + exp4)
         
-        return result
+        result = Q_single / ((2 * np.pi) ** 1.5 * sigmax * sigmay * sigmaz) * \
+                 np.exp(-0.5 * ((x - UU * t_single) ** 2) / (sigmax ** 2) - 0.5 * y ** 2 / sigmay ** 2) * \
+                 (np.exp(-0.5 * ((z - HEG) ** 2) / sigmaz ** 2) + np.exp(-0.5 * ((z + HEG) ** 2) / sigmaz ** 2))
+        
+        result[t_single < 0] = 0
 
-      # 离散烟团数量
-    release_puff_num = min(puff_num, int(t / t_release * puff_num) + 1) # t 时刻已经释放的烟团数
-    
+        # 湿沉积
+        saturation = 10 ** (8.07131 - 1730.63 / (233.426 + temperature)) * 133.322           # 饱和蒸汽压, Pa
+        absolute_humidity = humidity / 100 * saturation / (temperature + 273) / 461.5 * 1000 # 绝对湿度, g/m3
+        k_wet = rain * 1e3 / (3600 * absolute_humidity * 1000)                               # 迁移率, s-1
+        
+        t_single[t_single > t_rain] = t_rain
+        f_wet = np.exp(-k_wet * t_single)
+
+        return result * f_wet
+
+    # 使用Briggs经验公式 计算大气稳定度：
+    sigmax, sigmay, sigmaz = calc_sigmaxyz(stability, x)
+   
     con = np.zeros_like(x)
-    for i in range(int(release_puff_num)):
-        con += single_gaussian(Q_total / puff_num, t - t_release / release_puff_num * i) 
+    for i in range(puff_num):
+        con += single_gaussian(Q_total / puff_num, t - t_release / puff_num * i, t_release - i * (t_release / puff_num)) 
     
     return con
