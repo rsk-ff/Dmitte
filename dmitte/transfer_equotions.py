@@ -547,3 +547,62 @@ def transfer_rates_baomi(char: str,
     k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
 
     return k_array.T
+
+
+def transfer_rates_morris(char: str, 
+                   plant_type: str, 
+                   airfx: Calc_air, 
+                   soilfx: Calc_soil, 
+                   plantfx: Calc_plant) -> np.ndarray:
+    '''
+    计算迁移率矩阵
+
+    Parameters:
+    ---
+    char: 'HT' or 'HTO', HT 或者 HTO 释放
+    airfx: 大气相关参数类
+    soilfx: 土壤参数计算类
+    plantfx: 植物相关参数类
+    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG' or 'TUBER_VEG'
+
+    Return:
+    ---
+    k_array: 迁移率矩阵
+    '''
+    ka2_s1 = (soilfx.VDSO / airfx.ML * 3600) + (airfx.rainfall / 9) / airfx.atm_h
+    ks3_s2 = ks3_s3 = 3.42E-4
+    ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
+    kbh_so = 3E-4
+    ka2_bh = (plantfx.VDPF / airfx.ML * 3600) + (airfx.rainfall /9) / airfx.atm_h
+    kbh_a2 = plantfx.ETRM / (plantfx.plant_w) * 100
+    kbo_bh = (np.log(2) / 10) /24
+            
+    ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
+    ka2_a2 = 0.693
+    ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (1+0.1) 
+
+    ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (5/6)
+    ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (5/6)
+    ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (5/6)
+    ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (1/6)
+    ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (1/6)
+    ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (1/6)
+    kbh_fh = np.log(2) / 2 / 40
+    kfh_bh = kbh_fh * (plantfx.plant_w / np.maximum(plantfx.friut_w, 20) ) 
+    kbh_fo = np.log(2)/ 45 * (plantfx.friut_wh / plantfx.plant_wh) / 24
+    kbh_bo = plantfx.TROBT
+   
+    ks1_s2 = 0.181 * 9 / soilfx.soil1w / 24
+    ks2_s3 = 0.072 * 9 / soilfx.soil2w / 24
+
+    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
+              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
+              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
+              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
+
+    n_t_step = len(airfx.U10)
+
+    k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
+
+    return k_array.T
+
