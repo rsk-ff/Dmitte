@@ -605,3 +605,4 @@ def transfer_rates_morris(char: str,
     k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
 
     return k_array.T
+

@@ -290,4 +290,5 @@ ax.legend(fontsize='x-small', ncol=3, loc='lower left')
 ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
 ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
 fig.savefig(os.path.join(fig_path, figname))
+
 # %%
