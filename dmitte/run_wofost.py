@@ -63,8 +63,8 @@ def plantModel(plant_type, plantmodel, date):
     df_results.index = pd.to_datetime(df_results.index)
     df_resampled = df_results.resample('H').interpolate(method='linear')
 
-    df_results.to_csv(f'./data/pcse_output/{plant_type}_pcse_results_daily.cvs')
-    df_resampled.to_csv(f'./data/pcse_output/{plant_type}_pcse_results_hourly.cvs')
+    # df_results.to_csv(f'./data/pcse_output/{plant_type}_pcse_results_daily.cvs')
+    # df_resampled.to_csv(f'./data/pcse_output/{plant_type}_pcse_results_hourly.cvs')
 
     return df_resampled
 

@@ -157,9 +157,137 @@ fig.savefig(os.path.join(fig_path, figname))
 print((int_con_3-np.array(data_to_compare)[1]) / np.array(data_to_compare)[1] * 100)
 
 # %% --------------------Plot_sigma_compare-------------------------------
-print('sigma 值(m):\n', 
-      calc_sigmaxyz(1, downwind)[1:], '\n',
-      calc_sigmaxyz(4, downwind)[1:], '\n',
-      calc_sigmaxyz(6, downwind)[1:], '\n',
-)
+plt.rcParams.update({'font.size': 6})
+
+fig_path = os.path.join(FIG_PATH, 'sigma')
+figname = 'case1_y.svg'
+data_to_compare = pd.read_csv(os.path.join(fig_path, 'case1_y.csv'), header=0, index_col=0)
+marker_list = ['D', 'o', '^', 'v', 's', 'p', '*', '+', 'x']
+labels = data_to_compare.index
+fig, ax = plt.subplots(figsize=(3, 2), constrained_layout=True)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1, 100)
+ax.set_ylim(1, 10000)
+for i, row in enumerate(np.array(data_to_compare)):
+    if i <= 6:
+        ax.plot([1, 3, 10, 30], row, c='gray', alpha=0.5, marker=marker_list[i], linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label=labels[i])
+    else:
+        ax.plot([1, 3, 10, 30], row, marker='x', linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label='Dmitte')
+ax.set_xlabel('下风向距离 / km')
+ax.set_ylabel(r'$\sigma_y\;/\;\mathrm{m}$')
+ax.legend(fontsize='x-small', ncol=3, loc='lower left')
+ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
+fig.savefig(os.path.join(fig_path, figname))
+
+fig_path = os.path.join(FIG_PATH, 'sigma')
+figname = 'case1_z.svg'
+data_to_compare = pd.read_csv(os.path.join(fig_path, 'case1_z.csv'), header=0, index_col=0)
+marker_list = ['D', 'o', '^', 'v', 's', 'p', '*', '+', 'x']
+labels = data_to_compare.index
+fig, ax = plt.subplots(figsize=(3, 2), constrained_layout=True)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1, 100)
+ax.set_ylim(1, 10000)
+for i, row in enumerate(np.array(data_to_compare)):
+    if i <= 6:
+        ax.plot([1, 3, 10, 30], row, c='gray', alpha=0.5, marker=marker_list[i], linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label=labels[i])
+    else:
+        ax.plot([1, 3, 10, 30], row, marker='x', linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label='Dmitte')
+ax.set_xlabel('下风向距离 / km')
+ax.set_ylabel(r'$\sigma_z\;/\;\mathrm{m}$')
+ax.legend(fontsize='x-small', ncol=3, loc='lower left')
+ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
+fig.savefig(os.path.join(fig_path, figname))
+
+fig_path = os.path.join(FIG_PATH, 'sigma')
+figname = 'case2_y.svg'
+data_to_compare = pd.read_csv(os.path.join(fig_path, 'case2_y.csv'), header=0, index_col=0)
+marker_list = ['D', 'o', '^', 'v', 's', 'p', '*', '+', 'x']
+labels = data_to_compare.index
+fig, ax = plt.subplots(figsize=(3, 2), constrained_layout=True)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1, 100)
+ax.set_ylim(1, 10000)
+for i, row in enumerate(np.array(data_to_compare)):
+    if i <= 6:
+        ax.plot([1, 3, 10, 30], row, c='gray', alpha=0.5, marker=marker_list[i], linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label=labels[i])
+    else:
+        ax.plot([1, 3, 10, 30], row, marker='x', linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label='Dmitte')
+ax.set_xlabel('下风向距离 / km')
+ax.set_ylabel(r'$\sigma_y\;/\;\mathrm{m}$')
+ax.legend(fontsize='x-small', ncol=3, loc='lower left')
+ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
+fig.savefig(os.path.join(fig_path, figname))
+
+fig_path = os.path.join(FIG_PATH, 'sigma')
+figname = 'case2_z.svg'
+data_to_compare = pd.read_csv(os.path.join(fig_path, 'case2_z.csv'), header=0, index_col=0)
+marker_list = ['D', 'o', '^', 'v', 's', 'p', '*', '+', 'x']
+labels = data_to_compare.index
+fig, ax = plt.subplots(figsize=(3, 2), constrained_layout=True)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1, 100)
+ax.set_ylim(1, 10000)
+for i, row in enumerate(np.array(data_to_compare)):
+    if i <= 6:
+        ax.plot([1, 3, 10, 30], row, c='gray', alpha=0.5, marker=marker_list[i], linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label=labels[i])
+    else:
+        ax.plot([1, 3, 10, 30], row, marker='x', linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label='Dmitte')
+ax.set_xlabel('下风向距离 / km')
+ax.set_ylabel(r'$\sigma_z\;/\;\mathrm{m}$')
+ax.legend(fontsize='x-small', ncol=3, loc='lower left')
+ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
+fig.savefig(os.path.join(fig_path, figname))
+
+fig_path = os.path.join(FIG_PATH, 'sigma')
+figname = 'case3_y.svg'
+data_to_compare = pd.read_csv(os.path.join(fig_path, 'case3_y.csv'), header=0, index_col=0)
+marker_list = ['D', 'o', '^', 'v', 's', 'p', '*', '+', 'x']
+labels = data_to_compare.index
+fig, ax = plt.subplots(figsize=(3, 2), constrained_layout=True)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1, 100)
+ax.set_ylim(1, 10000)
+for i, row in enumerate(np.array(data_to_compare)):
+    if i <= 6:
+        ax.plot([1, 3, 10, 30], row, c='gray', alpha=0.5, marker=marker_list[i], linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label=labels[i])
+    else:
+        ax.plot([1, 3, 10, 30], row, marker='x', linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label='Dmitte')
+ax.set_xlabel('下风向距离 / km')
+ax.set_ylabel(r'$\sigma_y\;/\;\mathrm{m}$')
+ax.legend(fontsize='x-small', ncol=3, loc='lower left')
+ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
+fig.savefig(os.path.join(fig_path, figname))
+
+fig_path = os.path.join(FIG_PATH, 'sigma')
+figname = 'case3_z.svg'
+data_to_compare = pd.read_csv(os.path.join(fig_path, 'case3_z.csv'), header=0, index_col=0)
+marker_list = ['D', 'o', '^', 'v', 's', 'p', '*', '+', 'x']
+labels = data_to_compare.index
+fig, ax = plt.subplots(figsize=(3, 2), constrained_layout=True)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1, 100)
+ax.set_ylim(1, 10000)
+for i, row in enumerate(np.array(data_to_compare)):
+    if i <= 6:
+        ax.plot([1, 3, 10, 30], row, c='gray', alpha=0.5, marker=marker_list[i], linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label=labels[i])
+    else:
+        ax.plot([1, 3, 10, 30], row, marker='x', linewidth = 0.5, markersize=4, fillstyle='none', markeredgewidth=0.8, label='Dmitte')
+ax.set_xlabel('下风向距离 / km')
+ax.set_ylabel(r'$\sigma_z\;/\;\mathrm{m}$')
+ax.legend(fontsize='x-small', ncol=3, loc='lower left')
+ax.get_yaxis().set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10))
+fig.savefig(os.path.join(fig_path, figname))
 # %%
