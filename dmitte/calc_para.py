@@ -2,6 +2,18 @@ import pandas as pd
 import numpy as np
 from dmitte import para_constant
 
+
+def _logarithmic_mean(a, b):
+    """Element-wise logarithmic mean, including the a == b limit."""
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
+    log_delta = np.log(a) - np.log(b)
+    out = np.empty_like(log_delta, dtype=np.float64)
+    same = np.isclose(log_delta, 0.0, rtol=1e-12, atol=1e-15)
+    out[same] = 0.5 * (a[same] + b[same])
+    np.divide(a - b, log_delta, out=out, where=~same)
+    return out
+
 # %%
 
 # 获取气象数据(.xlsx形式)
@@ -399,9 +411,10 @@ class Calc_plant(Calc_air):
         TMAXL = para_constant.Plant_dict[plant_type.upper ()]['TMAXL']
         RCPAR = para_constant.Plant_dict[plant_type.upper ()]['RCPAR']
         TB = (TMAXL - TOPTL) / (TOPTL - TMINL)
-        self.TTE = (self.TEMP - TMINL) / (TOPTL - TMINL) * \
-                   ((TMAXL - self.TEMP) / (TMAXL - TOPTL)) ** TB
-        self.TTE = np.maximum (self.TTE, 0.001)  # 将TTE中小于0.001的值设为0.001
+        temp_for_photosynthesis = np.clip(self.TEMP, TMINL, TMAXL)
+        self.TTE = (temp_for_photosynthesis - TMINL) / (TOPTL - TMINL) * \
+                   ((TMAXL - temp_for_photosynthesis) / (TMAXL - TOPTL)) ** TB
+        self.TTE = np.maximum(self.TTE, 0.001)  # 将TTE中小于0.001的值设为0.001
 
     # 计算辐射加权函数 RST
         self.PAR = np.maximum (self.PAR, 0.001)  # 将PAR中小于0.001的值设为0.001
