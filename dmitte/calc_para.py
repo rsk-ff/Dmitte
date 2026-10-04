@@ -236,7 +236,7 @@ class Calc_soil(Calc_air):
         RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
         RSOILA = self.RSOIL                     # 土壤阻滞因子,m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = (es - self.ea * self.r_h)         # 空气实际与饱和的蒸汽压只差,N m-2
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压只差,N m-2
         DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
         
         GAM = 0.67                            # 大气干湿度压力系数
@@ -500,7 +500,7 @@ class Calc_plant(Calc_air):
         RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
         RSTOMA = self.RC1 * 100.                # 植物冠层气孔阻力因子,单位 m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = (es - self.ea * self.r_h)         # 空气实际与饱和的蒸汽压之差,N m-2
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压之差,N m-2
         DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
         
         GAM = 0.67                            # 大气干湿度压力系数
