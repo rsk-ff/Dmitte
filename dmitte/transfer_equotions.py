@@ -173,7 +173,9 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
         equotions_with_params = partial(transfer_equotions, transfer_rates=ki, LAMBDA_T=LAMBDA_T)
         sol = solve_ivp(equotions_with_params, t_span=(0, 1), y0=Ai, t_eval=[1])
         return sol.y.squeeze()
-
+    # Preserve caller-owned transfer rates; the first-step adjustments are solver-local.
+    k_array = np.array(k_array, dtype=np.float64, copy=True)
+    char = char.upper()
     k_array[0, 0] = 0
     k_array[0, 17] = 0
 
