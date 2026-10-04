@@ -307,14 +307,7 @@ class Calc_soil(Calc_air):
         ln_Koa = np.log(K1)
         ln_Kob = np.log(K2)
 
-        # if ln_Koa != ln_Kob:  # To avoid division by zero
-        #     K_12 = delta_K / (ln_Koa - ln_Kob)
-        # else:
-        #     K_12 = 0
-        if (ln_Koa != ln_Kob).any():  # To avoid division by zero when at least one element is different
-            K_12 = delta_K / (ln_Koa - ln_Kob)
-        else:
-            K_12 = np.zeros_like(delta_K)  # Assuming delta_K is a numpy array, create an array of zeros with the same shape
+        K_12 = _logarithmic_mean(K1, K2)
 
 
         # Using Darcy's law to calculate Va_b for the first pair of layers
@@ -328,14 +321,7 @@ class Calc_soil(Calc_air):
         ln_Koa = np.log(K2)
         ln_Kob = np.log(K3)
 
-        # if ln_Koa != ln_Kob:  # To avoid division by zero
-        #     K_23 = delta_K / (ln_Koa - ln_Kob)
-        # else:
-        #     K_23 = 0
-        if (ln_Koa != ln_Kob).any():  # To avoid division by zero when at least one element is different
-            K_23 = delta_K / (ln_Koa - ln_Kob)
-        else:
-            K_23 = np.zeros_like(delta_K)  # Assuming delta_K is a numpy array, create an array of zeros with the same shape
+        K_23 = _logarithmic_mean(K2, K3)
 
 
         Sa2 = calc_SS(thetMAX_layers[1], theta[:,1], theta_1500_layers)
