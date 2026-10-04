@@ -51,16 +51,14 @@ def plantModel(plant_type, plantmodel, date):
     # wofsim.run_till_terminate()
     # C:\Users\auror\miniconda3\envs\cttm\Lib\site-packages\pcse\conf\Wofost72_WLP_FD.conf
     df_results = pd.DataFrame(wofsim.get_output())
-    
-    # 输出模拟日期内所需的参数值
-    first_date = df_results.iloc[0]['day']
-    delta = first_date - start_date
-    day_delta = delta.days
+    # 输出模拟日期内所需的参数值。按日期切片，避免位置偏移在边界情况下截错数据。
     df_results = df_results.set_index("day")
-    df_results = df_results.iloc[abs(day_delta):]
-    
-    # 使用线性插值将每日的数据转变为每小时数据
     df_results.index = pd.to_datetime(df_results.index)
+    df_results = df_results.loc[pd.Timestamp(start_date):pd.Timestamp(end_date)]
+    if df_results.empty:
+        raise ValueError(f"No WOFOST output available between {start_date} and {end_date}.")
+
+    # 使用线性插值将每日的数据转变为每小时数据
     df_resampled = df_results.resample('H').interpolate(method='linear')
 
     # df_results.to_csv(f'./data/pcse_output/{plant_type}_pcse_results_daily.cvs')
