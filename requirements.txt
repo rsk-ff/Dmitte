@@ -1,0 +1,18 @@
+# Core model (dmitte package)
+numpy
+scipy
+pandas>=2,<3        # calc_para uses fillna(method=...), removed in pandas 3
+openpyxl            # pandas.read_excel for the meteo .xlsx files
+pcse>=5.5,<6        # pcse 6 moved WOFOST72SiteDataProvider out of pcse.util
+PyYAML
+
+# Sensitivity analysis and run scripts
+SALib
+joblib
+tqdm
+
+# Plotting
+matplotlib
+seaborn
+adjustText
+ipython             # wofost_morris.py uses IPython.display
