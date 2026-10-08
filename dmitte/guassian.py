@@ -62,21 +62,21 @@ def gaussian_puff_model(x, y, z, t, Q_total, UU, HEG, stability, t_release, puff
         ---
         result: 单个烟团导致的浓度
         '''
-        np.seterr(divide='ignore', invalid='ignore')  # 消除被除数为0的警告
+        with np.errstate(divide='ignore', invalid='ignore'):
+            result = Q_single / ((2 * np.pi) ** 1.5 * sigmax * sigmay * sigmaz) * \
+                     np.exp(-0.5 * ((x - UU * t_single) ** 2) / (sigmax ** 2) - 0.5 * y ** 2 / sigmay ** 2) * \
+                     (np.exp(-0.5 * ((z - HEG) ** 2) / sigmaz ** 2) + np.exp(-0.5 * ((z + HEG) ** 2) / sigmaz ** 2))
         
-        result = Q_single / ((2 * np.pi) ** 1.5 * sigmax * sigmay * sigmaz) * \
-                 np.exp(-0.5 * ((x - UU * t_single) ** 2) / (sigmax ** 2) - 0.5 * y ** 2 / sigmay ** 2) * \
-                 (np.exp(-0.5 * ((z - HEG) ** 2) / sigmaz ** 2) + np.exp(-0.5 * ((z + HEG) ** 2) / sigmaz ** 2))
-        
-        result[t_single < 0] = 0
+        # np.where works for both scalar and array release times and does not mutate the caller input.
+        result = np.where(np.asarray(t_single) < 0, 0.0, result)
 
         # 湿沉积
         saturation = 10 ** (8.07131 - 1730.63 / (233.426 + temperature)) * 133.322           # 饱和蒸汽压, Pa
         absolute_humidity = humidity / 100 * saturation / (temperature + 273) / 461.5 * 1000 # 绝对湿度, g/m3
         k_wet = rain * 1e3 / (3600 * absolute_humidity * 1000)                               # 迁移率, s-1
         
-        t_single[t_single > t_rain] = t_rain
-        f_wet = np.exp(-k_wet * t_single)
+        wet_time = np.clip(np.asarray(t_single), 0.0, t_rain)
+        f_wet = np.exp(-k_wet * wet_time)
 
         return result * f_wet
 

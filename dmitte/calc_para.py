@@ -2,6 +2,18 @@ import pandas as pd
 import numpy as np
 from dmitte import para_constant
 
+
+def _logarithmic_mean(a, b):
+    """Element-wise logarithmic mean, including the a == b limit."""
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
+    log_delta = np.log(a) - np.log(b)
+    out = np.empty_like(log_delta, dtype=np.float64)
+    same = np.isclose(log_delta, 0.0, rtol=1e-12, atol=1e-15)
+    out[same] = 0.5 * (a[same] + b[same])
+    np.divide(a - b, log_delta, out=out, where=~same)
+    return out
+
 # %%
 
 # 获取气象数据(.xlsx形式)
@@ -236,7 +248,7 @@ class Calc_soil(Calc_air):
         RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
         RSOILA = self.RSOIL                     # 土壤阻滞因子,m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = (es - self.ea * self.r_h)         # 空气实际与饱和的蒸汽压只差,N m-2
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压只差,N m-2
         DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
         
         GAM = 0.67                            # 大气干湿度压力系数
@@ -307,14 +319,7 @@ class Calc_soil(Calc_air):
         ln_Koa = np.log(K1)
         ln_Kob = np.log(K2)
 
-        # if ln_Koa != ln_Kob:  # To avoid division by zero
-        #     K_12 = delta_K / (ln_Koa - ln_Kob)
-        # else:
-        #     K_12 = 0
-        if (ln_Koa != ln_Kob).any():  # To avoid division by zero when at least one element is different
-            K_12 = delta_K / (ln_Koa - ln_Kob)
-        else:
-            K_12 = np.zeros_like(delta_K)  # Assuming delta_K is a numpy array, create an array of zeros with the same shape
+        K_12 = _logarithmic_mean(K1, K2)
 
 
         # Using Darcy's law to calculate Va_b for the first pair of layers
@@ -328,14 +333,7 @@ class Calc_soil(Calc_air):
         ln_Koa = np.log(K2)
         ln_Kob = np.log(K3)
 
-        # if ln_Koa != ln_Kob:  # To avoid division by zero
-        #     K_23 = delta_K / (ln_Koa - ln_Kob)
-        # else:
-        #     K_23 = 0
-        if (ln_Koa != ln_Kob).any():  # To avoid division by zero when at least one element is different
-            K_23 = delta_K / (ln_Koa - ln_Kob)
-        else:
-            K_23 = np.zeros_like(delta_K)  # Assuming delta_K is a numpy array, create an array of zeros with the same shape
+        K_23 = _logarithmic_mean(K2, K3)
 
 
         Sa2 = calc_SS(thetMAX_layers[1], theta[:,1], theta_1500_layers)
@@ -413,9 +411,10 @@ class Calc_plant(Calc_air):
         TMAXL = para_constant.Plant_dict[plant_type.upper ()]['TMAXL']
         RCPAR = para_constant.Plant_dict[plant_type.upper ()]['RCPAR']
         TB = (TMAXL - TOPTL) / (TOPTL - TMINL)
-        self.TTE = (self.TEMP - TMINL) / (TOPTL - TMINL) * \
-                   ((TMAXL - self.TEMP) / (TMAXL - TOPTL)) ** TB
-        self.TTE = np.maximum (self.TTE, 0.001)  # 将TTE中小于0.001的值设为0.001
+        temp_for_photosynthesis = np.clip(self.TEMP, TMINL, TMAXL)
+        self.TTE = (temp_for_photosynthesis - TMINL) / (TOPTL - TMINL) * \
+                   ((TMAXL - temp_for_photosynthesis) / (TMAXL - TOPTL)) ** TB
+        self.TTE = np.maximum(self.TTE, 0.001)  # 将TTE中小于0.001的值设为0.001
 
     # 计算辐射加权函数 RST
         self.PAR = np.maximum (self.PAR, 0.001)  # 将PAR中小于0.001的值设为0.001
@@ -500,7 +499,7 @@ class Calc_plant(Calc_air):
         RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
         RSTOMA = self.RC1 * 100.                # 植物冠层气孔阻力因子,单位 m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = (es - self.ea * self.r_h)         # 空气实际与饱和的蒸汽压之差,N m-2
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压之差,N m-2
         DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
         
         GAM = 0.67                            # 大气干湿度压力系数
