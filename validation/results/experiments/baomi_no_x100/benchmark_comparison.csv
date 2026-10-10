@@ -1,0 +1,34 @@
+benchmark,crop,variant,metric,benchmark_quantity,benchmark_crop,bench_low,bench_high,unit,model_median,model_p5,model_p95,n,verdict,factor_off
+B1,potato,baomi,R0_leaf,leaf TFWT at end of 1 h exposure / mean air-moisture HTO,radish,22.0,46.0,%,6.505801845809371,1.1852529567110814,44.99945237194228,150,off,3.381596999326227
+B1,wheat,baomi,R0_leaf,leaf TFWT at end of 1 h exposure / mean air-moisture HTO,radish,22.0,46.0,%,93.65355831932814,20.151884366582564,1144.176442332543,112,close,2.0359469199853946
+B2,potato,baomi,R0_leaf,leaf TFWT at end of 1 h exposure / mean air-moisture HTO (day),rice,60.0,100.0,%,6.498398584173176,1.161489426564956,40.54283688153674,75,off,9.233043991196501
+B2,wheat,baomi,R0_leaf,leaf TFWT at end of 1 h exposure / mean air-moisture HTO (day),rice,60.0,100.0,%,73.38631632064786,17.478600858248445,738.3418010611618,56,consistent,1.0
+B3,potato,baomi,R0_leaf,leaf TFWT at end of 1 h exposure / mean air-moisture HTO (night),rice,30.0,40.0,%,6.715521108856942,1.2332227277543184,43.673786043533205,75,off,4.467263152584497
+B3,wheat,baomi,R0_leaf,leaf TFWT at end of 1 h exposure / mean air-moisture HTO (night),rice,30.0,40.0,%,111.5097116770817,34.68328708049683,1421.315029245699,56,close,2.7877427919270423
+B4,potato,baomi,R0_night_over_day,night/day ratio of leaf HTO uptake,wheat,0.23,0.25,-,1.0330805875270643,0.9566730561123377,1.1534621440050983,75,off,4.132322350108257
+B4,wheat,baomi,R0_night_over_day,night/day ratio of leaf HTO uptake,wheat,0.23,0.25,-,2.067428596318148,1.0763394475860655,4.2096915322183674,56,off,8.269714385272591
+B5,potato,baomi,k_exchange,leaf TFWT loss rate constant within 1 h after daytime exposure,wheat,0.85,1.66,h-1,0.0847875871583067,0.01372604941763038,0.32531639894693315,75,off,10.025052351271267
+B5,wheat,baomi,k_exchange,leaf TFWT loss rate constant within 1 h after daytime exposure,wheat,0.85,1.66,h-1,1.743248790943606,0.2341046774923421,4.554930995599888,56,close,1.0501498740624133
+B7,potato,baomi,k_exchange,leaf HTO uptake rate constant (day),maize,0.1,0.21,h-1,0.0847875871583067,0.01372604941763038,0.32531639894693315,75,close,1.1794179236789726
+B7,wheat,baomi,k_exchange,leaf HTO uptake rate constant (day),maize,0.1,0.21,h-1,1.743248790943606,0.2341046774923421,4.554930995599888,56,off,8.301184718779076
+B8,potato,baomi,k_exchange,leaf HTO uptake rate constant (night),maize,0.035,0.13,h-1,9.621257850599564e-05,4.396179343392298e-08,0.003010499068850279,75,off,363.7777985320175
+B8,wheat,baomi,k_exchange,leaf HTO uptake rate constant (night),maize,0.035,0.13,h-1,0.01439378955056755,9.402141644517078e-07,0.17411676469708914,56,close,2.431604260784815
+B6,potato,baomi,k_day_over_night,day/night ratio of leaf HTO uptake rate,most crops (not young lettuce),3.0,5.0,-,1477.9563003973433,31.20412527071064,907792.4832005637,75,off,295.59126007946867
+B6,wheat,baomi,k_day_over_night,day/night ratio of leaf HTO uptake rate,most crops (not young lettuce),3.0,5.0,-,112.2646486689805,16.126189429711573,841523.1121702834,56,off,22.4529297337961
+B9,potato,baomi,tfwt_drop_leaf,TFWT decrease factor from end of exposure to harvest,rice,600.0,95000.0,-,44.60409034298608,4.23584884317809,2208.2047346536397,150,off,13.451681121311086
+B9,wheat,baomi,tfwt_drop_leaf,TFWT decrease factor from end of exposure to harvest,rice,600.0,95000.0,-,837.3909275698657,45.65115980141917,65155.759331986694,112,consistent,1.0
+B10,potato,baomi,tfwt_drop_edible,TFWT decrease factor from end of exposure to harvest,radish root,0.0,13000.0,-,3.5828007660609362,1.0,1521.392432852212,150,consistent,1.0
+B12,potato,baomi,TLI_edible,TLI = OBT in tubers at harvest / leaf TFWT at end of exposure,potato tuber,0.2,0.3,%,14.32997370711237,0.24832502172078802,62.35777543163971,150,off,47.7665790237079
+B13,potato,baomi,TLI_edible,TLI = OBT in root at harvest / leaf TFWT at end of exposure,radish,0.11,0.33,%,14.32997370711237,0.24832502172078802,62.35777543163971,150,off,43.42416274882536
+B15,potato,baomi,obt_night_over_day,night/day ratio of OBT formation at equal leaf HTO,"wheat, rice, potato, bean, Chlorella",0.1,0.5,-,1.1063342338568751,0.8702141309812401,1.8708669714904165,75,close,2.2126684677137503
+B15,wheat,baomi,obt_night_over_day,night/day ratio of OBT formation at equal leaf HTO,"wheat, rice, potato, bean, Chlorella",0.1,0.5,-,4.008726337878291,1.1927245723801807,5.854764429397912,56,off,8.017452675756582
+B16,potato,baomi,obt_end_over_air,OBT in plant at end of exposure / air-moisture HTO,bean,0.13333333333333333,0.30000000000000004,%,0.3102656741994253,0.020091324290475374,2.0237115508717616,75,close,1.0342189139980842
+B16,wheat,baomi,obt_end_over_air,OBT in plant at end of exposure / air-moisture HTO,bean,0.13333333333333333,0.30000000000000004,%,0.1331387106101698,0.03405613020837105,0.7868137338469264,56,close,1.0014618041760475
+B17,potato,baomi,obt_share_24h,OBT share of total plant tritium 24 h after exposure,bean,2.0,4.0,%,30.206474815680437,2.6495142042530064,56.38980235892228,150,off,7.551618703920109
+B17,wheat,baomi,obt_share_24h,OBT share of total plant tritium 24 h after exposure,bean,2.0,4.0,%,54.83225547468463,6.145639309564367,67.1938255043284,112,off,13.708063868671157
+B18,potato,baomi,chronic_OBT_over_air,fruit/tuber OBT (Bq/L comb. water) / air HTO (Bq/L) averaged at pod filling,fruits and tubers,0.72,1.14,-,36.197254389579136,22.291255931783375,55.77853041053519,5,off,31.75197753471854
+B18,wheat,baomi,chronic_OBT_over_air,fruit/tuber OBT (Bq/L comb. water) / air HTO (Bq/L) averaged at pod filling,fruits and tubers,0.72,1.14,-,3.342206568343973,2.7586272443297686,8.288187018566882,4,close,2.931760147670152
+B19,potato,baomi,chronic_TFWT_over_air,fruit/tuber HTO / air HTO averaged 3 d before harvest,fruits and tubers,0.57,1.83,-,36.91851038830033,26.157488518877752,108.11705351479547,5,off,20.17404939251384
+B19,wheat,baomi,chronic_TFWT_over_air,fruit/tuber HTO / air HTO averaged 3 d before harvest,fruits and tubers,0.57,1.83,-,461.3178094336903,387.21592658437413,1184.2019019486102,4,off,252.08623466321873
+B20,potato,baomi,chronic_leaf_OBT_over_TFWT,plant OBT / plant TFWT at equilibrium (isotopic discrimination factor),various,0.64,1.3,-,-0.8409714467120548,-5.678501335862839,9.06480874777167,5,unphysical,
+B20,wheat,baomi,chronic_leaf_OBT_over_TFWT,plant OBT / plant TFWT at equilibrium (isotopic discrimination factor),various,0.64,1.3,-,-0.328903797038704,-0.6472986190426951,-0.13990920085019493,4,unphysical,

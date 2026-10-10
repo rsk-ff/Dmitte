@@ -245,15 +245,15 @@ class Calc_soil(Calc_air):
         PAR (float): 光合有效辐射 (W/m^2)
         LEAFA (float): 叶面积指数 (m^2/m^2)
         """
-        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
-        RSOILA = self.RSOIL                     # 土壤阻滞因子,m/s
+        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 s/m
+        RSOILA = self.RSOIL                     # 土壤阻滞因子,s/m
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压只差,N m-2
-        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 饱和水汽压差, kPa
+        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压曲线斜率, kPa/K
         
-        GAM = 0.67                            # 大气干湿度压力系数
+        GAM = 0.067                           # 干湿表常数, kPa/K(与 es、DELE 同为 kPa)
         RHO = 1.2923                          # 空气密度,单位 kg/m^3
-        CP = 1.013                            # 比热容,单位 J/(kg K)
+        CP = 1013.                            # 空气定压比热容, J/(kg K)
         LE = 2.45E+6                          # 水的蒸发潜热,单位 J/kg
         ALBEDO = 0.23                         # 地表反射率
 
@@ -496,15 +496,15 @@ class Calc_plant(Calc_air):
         PAR (float): 光合有效辐射 (W/m^2)
         LEAFA (float): 叶面积指数 (m^2/m^2)
         """
-        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
+        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 s/m
         RSTOMA = self.RC1 * 100.                # 植物冠层气孔阻力因子,单位 m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压之差,N m-2
-        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 饱和水汽压差, kPa
+        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压曲线斜率, kPa/K
         
-        GAM = 0.67                            # 大气干湿度压力系数
+        GAM = 0.067                           # 干湿表常数, kPa/K(与 es、DELE 同为 kPa)
         RHO = 1.2923                          # 空气密度,单位 kg/m^3
-        CP = 1.013                            # 比热容,单位 J/(kg K)
+        CP = 1013.                            # 空气定压比热容, J/(kg K)
         LE = 2.45E+6                          # 水的蒸发潜热,单位 J/kg
         
         self.QSTR = self.PAR * (1- np.exp(-0.398 * self.LAI))

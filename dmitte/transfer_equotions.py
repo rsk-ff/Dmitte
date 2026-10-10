@@ -45,12 +45,12 @@ def transfer_rates(char: str,
         ks0_s1 = 0.2
         ks0_s2 = 0.02
         ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (0.5+0.1) 
+        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
         
     elif char.upper() == 'HTO':
         ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
         ka2_a2 = 0.693
-        ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (1+0.1) 
+        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
 
     else:
         raise ValueError("Unsupported char: '{}'.".format(char))
@@ -71,25 +71,25 @@ def transfer_rates(char: str,
     elif plant_type.upper() == 'CEREAL':
         ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
         ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
+        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
         ks1_fh = 0
         ks2_fh = 0
         ks3_fh = 0
-        kbh_fh = (np.log2(10) / 2) 
+        kbh_fh = (np.log(2) / 2) 
         kfh_bh = kbh_fh * plantfx.plant_w / plantfx.friut_w        
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'ROOT_VEG':
         ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (5/6)
         ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (5/6)
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (5/6)
+        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (5/6)
         ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (1/6)
         ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (1/6)
-        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (1/6)
+        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (1/6)
         kbh_fh = (kbh_a2 /2) * (1/6) 
         kfh_bh = kbh_fh * (plantfx.plant_w / plantfx.friut_w ) 
-        kbh_fo = np.log(2)/(para_constant.HWZ[airfx.sta-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
+        kbh_fo = np.log(2)/(para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'TUBER_VEG':
@@ -101,7 +101,7 @@ def transfer_rates(char: str,
         ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
         kbh_fh = (kbh_a2 /2) * (1/6) 
         kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     else:
@@ -248,7 +248,7 @@ def transfer_rates_UFORTI(char: str,
         ks0_s1 = 0.2
         ks0_s2 = 0.02
         ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (0.5+0.1) 
+        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
         
     elif char.upper() == 'HTO':
         ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
@@ -274,13 +274,13 @@ def transfer_rates_UFORTI(char: str,
     elif plant_type.upper() == 'CEREAL':
         ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
         ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
+        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
         ks1_fh = 0
         ks2_fh = 0
         ks3_fh = 0
-        kbh_fh = (np.log2(10) / 2) 
+        kbh_fh = (np.log(2) / 2) 
         kfh_bh = kbh_fh * plantfx.plant_w / plantfx.friut_w        
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'ROOT_VEG':
@@ -304,7 +304,7 @@ def transfer_rates_UFORTI(char: str,
         ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
         kbh_fh = (kbh_a2 /2) * (1/6) 
         kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     else:
@@ -351,7 +351,7 @@ def transfer_rates_Korea(char: str,
     kbh_so = 3E-4
     ka2_bh = (plantfx.VDPF / airfx.ML * 3600) + (airfx.rainfall /9) / airfx.atm_h
     kbh_a2 = plantfx.ETRM / (plantfx.plant_w)
-    kbo_bh = (np.log2(10) / 10) /24
+    kbo_bh = (np.log(2) / 10) /24
     
     if char.upper() == 'HT':
         ka1_a1 = 0.693 
@@ -361,12 +361,12 @@ def transfer_rates_Korea(char: str,
         ks0_s1 = 0.2
         ks0_s2 = 0.02
         ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (0.5+0.1) 
+        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
         
     elif char.upper() == 'HTO':
         ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
         ka2_a2 = 0.693
-        ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (1+0.1) 
+        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
 
     else:
         raise ValueError("Unsupported char: '{}'.".format(char))
@@ -387,13 +387,13 @@ def transfer_rates_Korea(char: str,
     elif plant_type.upper() == 'CEREAL':
         ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
         ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
+        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
         ks1_fh = 0
         ks2_fh = 0
         ks3_fh = 0
-        kbh_fh = (np.log2(10) / 2) 
+        kbh_fh = (np.log(2) / 2) 
         kfh_bh = kbh_fh * plantfx.plant_w / plantfx.friut_w        
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'ROOT_VEG':
@@ -402,10 +402,10 @@ def transfer_rates_Korea(char: str,
         ks3_bh = 0
         ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
         ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
+        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
         kbh_fh = (kbh_a2 /2) * (1/6) 
         kfh_bh = kbh_fh * (plantfx.plant_w / plantfx.friut_w ) 
-        kbh_fo = np.log(2)/(para_constant.HWZ[airfx.sta-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
+        kbh_fo = np.log(2)/(para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'TUBER_VEG':
@@ -417,7 +417,7 @@ def transfer_rates_Korea(char: str,
         ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
         kbh_fh = (kbh_a2 /2) * (1/6) 
         kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     else:
@@ -472,12 +472,12 @@ def transfer_rates_baomi(char: str,
         ks0_s1 = 0.2
         ks0_s2 = 0.02
         ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (0.5+0.1) 
+        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
         
     elif char.upper() == 'HTO':
         ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
         ka2_a2 = 0.693
-        ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (1+0.1) 
+        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
 
     else:
         raise ValueError("Unsupported char: '{}'.".format(char))
@@ -498,7 +498,7 @@ def transfer_rates_baomi(char: str,
     elif plant_type.upper() == 'CEREAL':
         ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
         ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4
+        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
         ks1_fh = 0
         ks2_fh = 0
         ks3_fh = 0
@@ -510,10 +510,10 @@ def transfer_rates_baomi(char: str,
     elif plant_type.upper() == 'ROOT_VEG':
         ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (5/6)
         ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (5/6)
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (5/6)
+        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (5/6)
         ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (1/6)
         ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (1/6)
-        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (1/6)
+        ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (1/6)
         kbh_fh = np.log(2) / 2 / 40
         kfh_bh = kbh_fh * (plantfx.plant_w / np.maximum(plantfx.friut_w, 20) ) 
         kbh_fo = np.log(2)/ 45 * (plantfx.friut_wh / plantfx.plant_wh) / 24
@@ -528,7 +528,7 @@ def transfer_rates_baomi(char: str,
         ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
         kbh_fh = (kbh_a2 /2) * (1/6) 
         kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
-        kbh_fo = np.log(2/(para_constant.HWZ[airfx.sta-1]/2)) * (plantfx.friut_wh / plantfx.plant_wh)
+        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     else:
@@ -581,14 +581,14 @@ def transfer_rates_morris(char: str,
             
     ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
     ka2_a2 = 0.693
-    ks1_a2 = soilfx.ESOIL / soilfx.BODW1 * (1+0.1) 
+    ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
 
     ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (5/6)
     ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (5/6)
-    ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (5/6)
+    ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (5/6)
     ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (1/6)
     ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (1/6)
-    ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.4* (1/6)
+    ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (1/6)
     kbh_fh = np.log(2) / 2 / 40
     kfh_bh = kbh_fh * (plantfx.plant_w / np.maximum(plantfx.friut_w, 20) ) 
     kbh_fo = np.log(2)/ 45 * (plantfx.friut_wh / plantfx.plant_wh) / 24

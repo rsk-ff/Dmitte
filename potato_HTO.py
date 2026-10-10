@@ -3,7 +3,7 @@ from dmitte.guassian import gaussian_puff_model
 from dmitte import run_wofost
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
 from dmitte.transfer_equotions import transfer_rates, solve_con, transfer_rates_UFORTI, transfer_rates_baomi
-from dmitte.para_constant import LAMBDA_T_H
+from dmitte.para_constant import LAMBDA_T_H, DOSE_COEF_HTO, DOSE_COEF_OBT
 
 from plot_config import *
 
@@ -73,8 +73,8 @@ harvest_time = 2160
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * 4.2e-7 + \
-                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * 1.8e-8
+dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 
 # %%
@@ -166,8 +166,8 @@ harvest_time = 2160
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * 4.2e-7 + \
-                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * 1.8e-8
+dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 
 # %%
@@ -239,8 +239,8 @@ harvest_time = 2160
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * 4.2e-7 + \
-                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * 1.8e-8
+dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 
 # %%
