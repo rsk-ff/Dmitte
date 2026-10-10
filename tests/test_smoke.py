@@ -63,3 +63,14 @@ def test_meteodata_loads(monkeypatch):
     monkeypatch.chdir(os.path.join(DATA_DIR, '..'))
     df = meteodata('2021-04-20', '2021-04-22')
     assert {'Ta_Avg', 'WS10m_avg', 'RH_Avg'} <= set(df.columns)
+
+
+def test_wofost_conf_outputs_what_calc_plant_reads():
+    # Calc_plant reads PGASS and PMRES, which the stock PCSE config does not output
+    from pcse.engine import Engine  # noqa: F401
+    from dmitte import run_wofost
+    conf = {}
+    with open(run_wofost.WOFOST_CONF) as f:
+        exec(compile(f.read(), run_wofost.WOFOST_CONF, 'exec'), conf)
+    assert {'PGASS', 'PMRES', 'LAI', 'TAGP', 'TWSO', 'TWLV', 'SM', 'WWLOW'} <= set(conf['OUTPUT_VARS'])
+    assert run_wofost.WOFOST72_CROP_REPO.endswith('/wofost72/')
