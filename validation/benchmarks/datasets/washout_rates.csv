@@ -1,0 +1,8 @@
+precipitation,intensity_mm_per_h,washout_low_s-1,washout_central_s-1,washout_high_s-1,note,source_id,table
+light rain,<=2.5,,,2.5E-04,proposed value for simple robust HTO models,TECDOC1738,Table 11
+moderate rain,2.6-7.6,,3.6E-04,,proposed value for simple robust HTO models,TECDOC1738,Table 11
+heavy rain,>7.6,,1.0E-03,,proposed value for simple robust HTO models,TECDOC1738,Table 11
+snow,all,,2.2E-06,,proposed value for simple robust HTO models,TECDOC1738,Table 11
+rain (compilation of 54 data points),various,1.3E-05,9.2E-05,3.6E-04,"mean 9.2e-5, SD 5.8e-5",TECDOC1738,Sec. 4.3.4 / Fig. 7
+rain at 0.6 mm/h 400 m from release,0.6,,2.60E-05,,,TECDOC1738,Table 10
+rain at 0.6 mm/h 800 m from release,0.6,,1.86E-05,,,TECDOC1738,Table 10

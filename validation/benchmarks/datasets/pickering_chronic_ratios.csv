@@ -1,0 +1,16 @@
+sample_type,form,ratio_to_air_moisture_mean,sd,min,max,n,source_id,table
+monthly rain,HTO,0.32,0.23,0.11,0.82,15,EMRAS_TC14,Table 3.7
+soil (top 5 cm),HTO,0.33,0.03,0.29,0.36,4,EMRAS_TC14,Table 3.7
+drinking water,HTO,0.29,0.03,0.24,0.33,3,EMRAS_TC14,Table 3.7
+forage,OBT,0.41,0.18,0.19,0.83,17,EMRAS_TC14,Table 3.7
+grain,OBT,0.33,0.15,0.14,0.57,8,EMRAS_TC14,Table 3.7
+total mixed ration,OBT,0.38,0.04,0.32,0.43,4,EMRAS_TC14,Table 3.7
+fruit and fruit vegetables,OBT,0.30,0.10,0.19,0.50,6,EMRAS_TC14,Table 3.7
+root crops,OBT,0.30,0.09,0.16,0.38,4,EMRAS_TC14,Table 3.7
+calf flesh/heart,HTO,0.45,0.04,0.41,0.51,4,EMRAS_TC14,Table 3.7
+eggs,HTO,0.34,,,,1,EMRAS_TC14,Table 3.7
+chicken flesh/blood,HTO,0.34,,,,1,EMRAS_TC14,Table 3.7
+milk,OBT,0.28,0.06,0.22,0.35,2,EMRAS_TC14,Table 3.7
+calf flesh/heart,OBT,0.39,0.07,0.28,0.46,4,EMRAS_TC14,Table 3.7
+eggs,OBT,0.20,0.07,0.13,0.29,4,EMRAS_TC14,Table 3.7
+chicken flesh/blood,OBT,0.19,0.01,0.19,0.20,2,EMRAS_TC14,Table 3.7

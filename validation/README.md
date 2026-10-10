@@ -5,7 +5,7 @@
 
 ```
 validation/
-├── benchmarks/literature_benchmarks.csv   # 整理的文献基准（21 条，含出处链接）
+├── benchmarks/                             # 文献基准 v2：46 条标量基准 + 17 个实验数据集（见 benchmarks/README.md）
 ├── build_inputs.py                         # 从公开数据构建 ./data（气象、土壤、作物参数、农事）
 ├── run_validation.py                       # 虚拟实验：1 h 急性暴露（昼/夜）+ 慢性暴露
 ├── analyze.py                              # 与文献基准对比，输出表格和图
@@ -31,29 +31,16 @@ validation/
 
 ## 2 数据
 
-### 2.1 文献基准（`benchmarks/literature_benchmarks.csv`）
+### 2.1 文献基准（`benchmarks/`，v2）
 
-本环境无法访问 IAEA、ScienceDirect、OSTI 等站点下载全文，因此**基准值取自论文摘要、会议摘要和二次引用**。
-每条都在 `evidence` 列里注明了来源类型，`doi_or_url` 列给出链接，正式使用前建议对照全文核实。
+详见 [benchmarks/README.md](benchmarks/README.md)。v2 版对照 IAEA-TECDOC-1738、IAEA-TECDOC-1991、EMRAS 大豆/马铃薯情景报告、
+EMRAS 氚与 C-14 工作组报告（Pickering 情景）和 Melintescu & Galeriu (arXiv:1609.05052) 的**全文**整理：
 
-| ID | 量 | 作物 / 条件 | 文献值 | 出处 |
-|---|---|---|---|---|
-| B1 | 暴露结束时叶片 TFWT / 空气水汽 HTO | 白菜、萝卜，1 h 室外箱暴露 | 10–50 % | Choi et al. 2005, JER 84:79 ([PubMed](https://pubmed.ncbi.nlm.nih.gov/15936121/)) |
-| B2 / B3 | 同上，白天 / 夜间 | 水稻 | ≈100 % / 30–40 % | Choi et al.（[ETDEWEB 21051446](https://www.osti.gov/etdeweb/biblio/21051446)） |
-| B4 | 夜间 / 白天叶片 HTO 吸收 | 小麦，实验室 | ≈1/4 | Diabaté & Strack 1997（[ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0265931X97849855)） |
-| B5 / B6 | 叶–气交换速率；昼/夜比 | 综述 | < 1 h⁻¹；2–10 | Galeriu et al. 2013, JER 118:40（[doi](https://doi.org/10.1016/j.jenvrad.2012.11.005)） |
-| B7 / B8 | 叶片 HTO 吸收速率常数 白天 / 夜间 | 玉米，1 h 田间暴露 | 0.10–0.21 / 0.035–0.13 h⁻¹ | [PubMed 31581057](https://pubmed.ncbi.nlm.nih.gov/31581057/) |
-| B9–B11 | TFWT 从暴露结束到收获的下降倍数 | 水稻 / 萝卜根 / 白菜叶 | 600–95 000 / ≤1.3×10⁴ / ≤1.1×10⁶ | Choi et al. 2002 JER 58:67；Choi et al. 2005 |
-| B12 | TLI = 收获时可食部 OBT / 暴露结束时叶片 TFWT | 马铃薯块茎 | 0.2–0.3 % | EMRAS II WG7 报告（IAEA，[pdf](https://www-ns.iaea.org/downloads/rw/projects/emras/emras-two/third-technical-meeting/wgroup-seven/presentation-5th-wg7-obt-in-night-time.pdf)） |
-| B13 / B14 | TLI | 萝卜 / 白菜 | 0.1–0.3 % / 0.1–0.5 % | Choi et al.（[ETDEWEB 20305115](https://www.osti.gov/etdeweb/biblio/20305115)） |
-| B15 | 夜间 / 白天 OBT 生成（同等叶片 HTO） | 综述 | 0.1–0.33 | Galeriu et al. 2013 |
-| B16 / B17 | 暴露结束 OBT / 空气 HTO；24 h 后 OBT 占植物总氚 | 菜豆 | 0.2 %；2–4 % | [ETDEWEB 410495](https://www.osti.gov/etdeweb/biblio/410495) |
-| B18 / B19 | 慢性释放：果实/块茎 OBT / 空气 HTO；TFWT / 空气 HTO | 加拿大 CRL 菜园 2008–2011 | 0.93±0.21；1.20±0.63 | Korolevych & Kim 2013, JER 118（[ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0265931X12002937)） |
-| B20 | 叶片 OBT/HTO（慢性） | EMRAS 情景 | ≈0.7 | IAEA EMRAS 氚与 C-14 工作组报告（TECDOC-1678） |
-| B21 | 土壤 HTO 再释放 | 田间 D₂O 示踪 | 持续数周（定性） | JER 2004（[ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0265931X03001693)） |
+- `literature_benchmarks.csv`：46 条标量基准，其中 39 条已核对全文，7 条（玉米、菜豆、Chalk River 菜园、白菜叶 TFWT 下降倍数）仍只有摘要；
+- `datasets/`：17 个逐次实验数据集，包括小麦、马铃薯、菜豆、水稻、大豆、萝卜、白菜、樱桃番茄的短时暴露实验，Pickering 慢性释放，MODARIA 田间数据，冲刷系数，马铃薯 ¹⁴C；
+- `sources.csv`：文献登记。
 
-其他相关但未取到数值的资料：IAEA-TECDOC-1738（EMRAS II 氚事故释放）、IAEA-TECDOC-1991（MODARIA 氚模型比对，2022）、
-EMRAS「Potato Scenario」最终报告（2008）。网络允许时，这些报告里的逐时序列数据是下一步最值得补充的。
+马铃薯现在有直接的氚实验基准：2 h 暴露后叶片 TFWT 为空气水汽浓度的 83 %（白天）/ 14 %（夜间），块茎 TLI 0.2–0.3 %（TECDOC-1738 表 24）。
 
 ### 2.2 模型输入（`build_inputs.py`，全部公开、固定到 commit）
 
@@ -85,6 +72,9 @@ EMRAS「Potato Scenario」最终报告（2008）。网络允许时，这些报�
    超过 3 倍为 ❌ 偏离；≤0 或发散（|log₁₀| > 30）为 ⛔ 非物理。只给中心值的基准按 ×/÷1.5 作为容差。
 
 ## 4 结果
+
+> 注意：本节结果是用 **v1 基准**（21 条，取自摘要）算的，基准升级到 v2 后尚未重新运行。v2 的数值变化对判定的预期影响见
+> [benchmarks/README.md 第 6 节](benchmarks/README.md#6-对上一轮验证结论的影响)。
 
 完整表见 `results/benchmark_comparison.csv`（含 5–95 % 分位）。中位数与判定：
 
@@ -151,8 +141,8 @@ EMRAS「Potato Scenario」最终报告（2008）。网络允许时，这些报�
 
 ## 6 局限
 
-- 文献值来自摘要/二次引用，没有逐时序列；不同作物（白菜、萝卜、水稻、玉米、菜豆）的基准被用来约束马铃薯和小麦，
-  只适合判断量级和定性行为（昼夜比、衰减幅度），不适合精细标定。
+- 第 4 节的判定基于 v1 基准（取自摘要/二次引用）。v2 已核对全文并补充了马铃薯、小麦的直接实验数据，但尚未重新运行。
+  部分基准仍来自其他作物（水稻、大豆、萝卜等），只适合判断量级和定性行为（昼夜比、衰减幅度），不适合精细标定。
 - 气象是荷兰 Wageningen，不是实验所在地（韩国大田、德国卡尔斯鲁厄、加拿大 Chalk River）；逐时强迫是由日数据合成的。
 - 土壤三层含水量都用 WOFOST 根区 SM，没有分层观测。
 - 大气扩散（高斯烟团）部分没有验证：可用的公开示踪实验（如 Prairie Grass）在本环境无法下载。

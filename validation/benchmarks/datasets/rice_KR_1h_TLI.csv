@@ -1,0 +1,10 @@
+experiment,date,stage,days_after_anthesis,stage_rel,OBT_grain_per_shoot_Bq,OBT_grain_Bq_per_g,OBT_grain_Bq_per_mL,TLI_pct,note,source_id,table
+E1,Aug-11,booting,-7,-0.130,0.480,0.291,0.485,0.005,less accurate (experimental problems),TECDOC1738,Table 28
+E2,Aug-18,heading,0,0.000,0.930,0.564,0.939,0.009,less accurate (experimental problems),TECDOC1738,Table 28
+E3,Aug-21,milky ripe,4,0.074,4.190,2.539,4.232,0.042,,TECDOC1738,Table 28
+E4,Aug-25,milky ripe,8,0.148,8.530,5.170,8.616,0.086,,TECDOC1738,Table 28
+E5,Aug-28,milky ripe,11,0.204,32.100,19.455,32.424,0.324,,TECDOC1738,Table 28
+E6,Sep-01,dough ripe,14,0.259,36.300,22.000,36.667,0.367,,TECDOC1738,Table 28
+E7,Sep-05,dough ripe,19,0.352,22.700,13.758,22.929,0.229,less accurate (experimental problems),TECDOC1738,Table 28
+E8,Sep-10,dough ripe,24,0.444,18.300,11.091,18.485,0.185,,TECDOC1738,Table 28
+E9,Sep-19,yellow ripe,33,0.611,3.170,1.921,3.202,0.032,,TECDOC1738,Table 28

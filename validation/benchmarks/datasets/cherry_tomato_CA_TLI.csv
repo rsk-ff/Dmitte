@@ -1,0 +1,9 @@
+experiment,days_from_exposure_to_harvest,TLI_pct,remarks,source_id,table
+Exp 1,90,0.00356,"night exposure, no fruit",TECDOC1738,Table 35
+Exp 2,4.3,2.12,"night exposure, no fruit",TECDOC1738,Table 35
+Exp 3,74,0.016,"night exposure, green fruit",TECDOC1738,Table 35
+Exp 4,0.58,0.149,"night exposure, green fruit",TECDOC1738,Table 35
+Exp 5,42,0.51,"night exposure, ripe fruit",TECDOC1738,Table 35
+Exp 6,1.7,0.346,"night exposure, ripe fruit",TECDOC1738,Table 35
+Exp 7,49,0.44,"day exposure, ripe fruit",TECDOC1738,Table 35
+Exp 8,48,0.12,"day exposure, ripe fruit",TECDOC1738,Table 35

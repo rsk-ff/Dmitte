@@ -1,0 +1,7 @@
+experiment,exposure_date,days_after_anthesis_published,air_moisture_mean_Bq_per_mL,OBT_stem_Bq_per_mL,OBT_leaves_Bq_per_mL,OBT_body_avg_Bq_per_mL,OBT_body_rel_air,OBT_shell_Bq_per_mL,OBT_seeds_Bq_per_mL,OBT_pods_avg_Bq_per_mL,OBT_pods_rel_air,TLI_pods_pct_approx,plant_water_content_pct,initial_fresh_weight_kg_per_m2,source_id,table
+SB1,Jul-02,-5,7.77E+04,18.0,14.0,16.0,2.06E-04,0.83,0.5,0.67,8.63E-06,0.002,82.0,0.96,EMRAS_SOY;TECDOC1738,EMRAS_SOY Table 3; TECDOC1738 Table 32; AECL Table 1
+SB2,Jul-13,6,1.47E+05,59.8,50.8,55.3,3.75E-04,3.5,3.7,3.6,2.44E-05,0.008,78.7,1.22,EMRAS_SOY;TECDOC1738,EMRAS_SOY Table 3; TECDOC1738 Table 32; AECL Table 1
+SB3,Jul-30,23,1.14E+05,37.8,17.7,27.8,2.44E-04,101.3,19.3,60.3,5.28E-04,0.053,73.3,2.73,EMRAS_SOY;TECDOC1738,EMRAS_SOY Table 3; TECDOC1738 Table 32; AECL Table 1
+SB4,Aug-09,33,5.27E+04,19.8,8.8,14.3,2.71E-04,74.7,200.0,137.4,2.61E-03,1.18,68.7,2.02,EMRAS_SOY;TECDOC1738,EMRAS_SOY Table 3; TECDOC1738 Table 32; AECL Table 1
+SB5,Aug-24,48,9.19E+04,44.3,13.5,28.9,3.14E-04,73.3,214.2,143.8,1.56E-03,0.73,68.3,4.17,EMRAS_SOY;TECDOC1738,EMRAS_SOY Table 3; TECDOC1738 Table 32; AECL Table 1
+SB6,Sep-17,60,1.37E+05,180,19.5,99.8,7.28E-04,33.5,77.0,55.2,4.03E-04,0.176,67.5,3.59,EMRAS_SOY;TECDOC1738,EMRAS_SOY Table 3; TECDOC1738 Table 32; AECL Table 1

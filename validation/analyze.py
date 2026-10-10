@@ -50,7 +50,7 @@ CHECKS = [
     ('B20', 'potato', 'chronic_leaf_OBT_over_TFWT', 'chronic'),
     ('B20', 'wheat', 'chronic_leaf_OBT_over_TFWT', 'chronic'),
 ]
-ONE_SIDED = {'B5': (0, None), 'B10': (0, None)}   # B5: "< 1 h-1"; B10: "up to 1.3e4" (upper bounds)
+ONE_SIDED = {'B10': (0, None)}   # B10: "up to 1.3e4" (upper bound)
 
 
 def bench_range(row):

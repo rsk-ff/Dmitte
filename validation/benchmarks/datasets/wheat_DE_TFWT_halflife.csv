@@ -1,0 +1,17 @@
+plant_part,exposure_time,n_experiments,halflife_min_low,halflife_min_high,source_id,table
+leaves,dawn,3,40,60,TECDOC1738,Table 23
+leaves,day,6,25,49,TECDOC1738,Table 23
+leaves,dusk,2,230,660,TECDOC1738,Table 23
+leaves,night,2,110,170,TECDOC1738,Table 23
+stems,dawn,3,45,49,TECDOC1738,Table 23
+stems,day,6,20,26,TECDOC1738,Table 23
+stems,dusk,2,130,320,TECDOC1738,Table 23
+stems,night,2,60,190,TECDOC1738,Table 23
+ears,dawn,3,79,91,TECDOC1738,Table 23
+ears,day,6,50,126,TECDOC1738,Table 23
+ears,dusk,2,210,330,TECDOC1738,Table 23
+ears,night,2,150,920,TECDOC1738,Table 23
+total plant,dawn,3,50,72,TECDOC1738,Table 23
+total plant,day,6,27,60,TECDOC1738,Table 23
+total plant,dusk,2,220,340,TECDOC1738,Table 23
+total plant,night,2,100,250,TECDOC1738,Table 23

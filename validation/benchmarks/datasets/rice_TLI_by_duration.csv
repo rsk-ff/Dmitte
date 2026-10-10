@@ -1,0 +1,17 @@
+exposure_h,stage_rel,TLI_pct,reference,source_id,table
+8,0.1,0.36,Atarashi-Andoh et al. [179],TECDOC1738,Table 36
+8,0.45,0.63,Ichimasa et al. [128],TECDOC1738,Table 36
+4,0.14286,0.4,Atarashi-Andoh et al. [180],TECDOC1738,Table 36
+4,0.33333,0.55,Atarashi-Andoh et al. [180],TECDOC1738,Table 36
+4,0.5,0.42,Atarashi-Andoh et al. [180],TECDOC1738,Table 36
+4,0.61905,0.15,Atarashi-Andoh et al. [180],TECDOC1738,Table 36
+4,0.83333,0.045,Atarashi-Andoh et al. [180],TECDOC1738,Table 36
+1,-0.0526,0.005,Choi et al. [181],TECDOC1738,Table 36
+1,0.07018,0.0093,Choi et al. [181],TECDOC1738,Table 36
+1,0.12281,0.04,Choi et al. [181],TECDOC1738,Table 36
+1,0.19298,0.085,Choi et al. [181],TECDOC1738,Table 36
+1,0.24561,0.32,Choi et al. [181],TECDOC1738,Table 36
+1,0.31579,0.363,Choi et al. [181],TECDOC1738,Table 36
+1,0.38596,0.227,Choi et al. [181],TECDOC1738,Table 36
+1,0.47368,0.186,Choi et al. [181],TECDOC1738,Table 36
+1,0.66667,0.032,Choi et al. [181],TECDOC1738,Table 36

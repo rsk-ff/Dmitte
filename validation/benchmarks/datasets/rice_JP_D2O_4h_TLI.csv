@@ -1,0 +1,16 @@
+days_after_flowering,plant_part,TLI_pct,tracer,source_id,table
+6,grain,0.39,D2O,TECDOC1738,Table 25
+14,grain,0.55,D2O,TECDOC1738,Table 25
+21,grain,0.43,D2O,TECDOC1738,Table 25
+26,grain,0.15,D2O,TECDOC1738,Table 25
+35,grain,0.045,D2O,TECDOC1738,Table 25
+6,stem,0.05,D2O,TECDOC1738,Table 25
+14,stem,0.03,D2O,TECDOC1738,Table 25
+21,stem,0.04,D2O,TECDOC1738,Table 25
+26,stem,0.03,D2O,TECDOC1738,Table 25
+35,stem,0.03,D2O,TECDOC1738,Table 25
+6,leaf,0.19,D2O,TECDOC1738,Table 25
+14,leaf,0.14,D2O,TECDOC1738,Table 25
+21,leaf,0.17,D2O,TECDOC1738,Table 25
+26,leaf,0.18,D2O,TECDOC1738,Table 25
+35,leaf,0.12,D2O,TECDOC1738,Table 25

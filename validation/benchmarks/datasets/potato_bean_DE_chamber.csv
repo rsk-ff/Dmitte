@@ -1,0 +1,23 @@
+crop,exposure,days_after_flowering,quantity,plant_part,value_pct,source_id,table
+bean,light 900 umol m-2 s-1,4,TLI (OBT at harvest / leaf HTO at end of 2 h),leaves,0.7,TECDOC1738,Table 24
+bean,light 900 umol m-2 s-1,4,TLI (OBT at harvest / leaf HTO at end of 2 h),stems,0.4,TECDOC1738,Table 24
+bean,light 900 umol m-2 s-1,4,TLI (OBT at harvest / leaf HTO at end of 2 h),pods,0.1,TECDOC1738,Table 24
+bean,light 120 umol m-2 s-1,1,TLI (OBT at harvest / leaf HTO at end of 2 h),leaves,0.3,TECDOC1738,Table 24
+bean,light 120 umol m-2 s-1,1,TLI (OBT at harvest / leaf HTO at end of 2 h),stems,0.2,TECDOC1738,Table 24
+bean,light 120 umol m-2 s-1,1,TLI (OBT at harvest / leaf HTO at end of 2 h),pods,0.03,TECDOC1738,Table 24
+bean,night,12,TLI (OBT at harvest / leaf HTO at end of 2 h),leaves,0.5,TECDOC1738,Table 24
+bean,night,12,TLI (OBT at harvest / leaf HTO at end of 2 h),stems,0.3,TECDOC1738,Table 24
+bean,night,12,TLI (OBT at harvest / leaf HTO at end of 2 h),pods,0.4,TECDOC1738,Table 24
+potato,light 900 umol m-2 s-1,20,TLI (OBT at harvest / leaf HTO at end of 2 h),leaves,0.2,TECDOC1738,Table 24
+potato,light 900 umol m-2 s-1,20,TLI (OBT at harvest / leaf HTO at end of 2 h),stems,0.2,TECDOC1738,Table 24
+potato,light 900 umol m-2 s-1,20,TLI (OBT at harvest / leaf HTO at end of 2 h),tubers,0.3,TECDOC1738,Table 24
+potato,light 120 umol m-2 s-1,13-25,TLI (OBT at harvest / leaf HTO at end of 2 h),leaves,0.2,TECDOC1738,Table 24
+potato,light 120 umol m-2 s-1,13-25,TLI (OBT at harvest / leaf HTO at end of 2 h),stems,0.1,TECDOC1738,Table 24
+potato,light 120 umol m-2 s-1,13-25,TLI (OBT at harvest / leaf HTO at end of 2 h),tubers,0.2,TECDOC1738,Table 24
+potato,night,15-23,TLI (OBT at harvest / leaf HTO at end of 2 h),leaves,0.2,TECDOC1738,Table 24
+potato,night,15-23,TLI (OBT at harvest / leaf HTO at end of 2 h),stems,0.2,TECDOC1738,Table 24
+potato,night,15-23,TLI (OBT at harvest / leaf HTO at end of 2 h),tubers,0.2,TECDOC1738,Table 24
+bean,light 900 umol m-2 s-1,0-24,leaf TFWT / air-moisture HTO after 2 h,leaves,77,TECDOC1738,Sec. 7.2.2
+bean,night,0-24,leaf TFWT / air-moisture HTO after 2 h,leaves,15,TECDOC1738,Sec. 7.2.2
+potato,light 900 umol m-2 s-1,13-45,leaf TFWT / air-moisture HTO after 2 h,leaves,83,TECDOC1738,Sec. 7.2.2
+potato,night,13-45,leaf TFWT / air-moisture HTO after 2 h,leaves,14,TECDOC1738,Sec. 7.2.2
