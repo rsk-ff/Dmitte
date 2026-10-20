@@ -39,9 +39,9 @@ warnings.filterwarnings('ignore')
 
 from dmitte import calc_para, run_wofost  # noqa: E402
 from dmitte.calc_para import Calc_air, Calc_plant, Calc_soil  # noqa: E402
-from dmitte.para_constant import LAMBDA_T_H  # noqa: E402
+from dmitte.para_constant import ALF_HTO, LAMBDA_T_H  # noqa: E402
 from dmitte.transfer_equotions import (solve_con, transfer_equotions, transfer_rates,  # noqa: E402
-                                       transfer_rates_baomi, transfer_rates_UFORTI)
+                                       transfer_rates_baomi, transfer_rates_UFORTI, water_balance_residual)
 
 OUT = os.path.join(ROOT, 'validation', 'results')
 LAT = 51.97                   # Wageningen
@@ -185,6 +185,24 @@ def run_clamped(P, w_air, i0, i1):
     return ys
 
 
+def water_balance_summary(k, air, soil, plant, variant):
+    """Uniform-specific-activity test per water compartment (median over hours, relative to outflow rate).
+
+    wb_<c>:     median of residual / k_out (signed; > 0 spurious enrichment, < 0 spurious depletion)
+    wbabs_<c>:  median of |residual - dlnW/dt| / k_out (part not explained by the storage change)
+    """
+    res = water_balance_residual(k, air, soil, plant, alpha=1.0 if variant == 'UFOTRI' else ALF_HTO)
+    out = {}
+    for c, r in res.items():
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ok = np.isfinite(r['residual']) & (r['k_out'] > 0)
+            rel = r['residual'][ok] / r['k_out'][ok]
+            unexplained = np.abs(r['residual'][ok] - r['dlnW_dt'][ok]) / r['k_out'][ok]
+        out[f'wb_{c}'] = float(np.median(rel)) if ok.any() else np.nan
+        out[f'wbabs_{c}'] = float(np.median(unexplained)) if ok.any() else np.nan
+    return out
+
+
 def safe_div(a, b):
     return a / b if b > 0 else np.nan
 
@@ -242,7 +260,8 @@ def main():
                     P = expm(Mc)
                     diag = dict(crop=crop, year=year, forcing=forcing, variant=vname,
                                 nonfinite_rates=n_bad, negative_rates=n_neg,
-                                negative_rate_names=','.join(sorted({c for c, m in zip(K_NAMES, (k < 0).any(axis=0)) if m})))
+                                negative_rate_names=','.join(sorted({c for c, m in zip(K_NAMES, (k < 0).any(axis=0)) if m})),
+                                **water_balance_summary(k, air, soil, plant, vname))
                     if forcing == 'diurnal' and year == cfg['years'][0]:
                         try:
                             diag['expm_vs_solve_con_maxrel'] = check_against_solve_con(k)

@@ -546,7 +546,8 @@ class Calc_plant(Calc_air):
         PAKT = (self.Pco -self.rd) * 1000 / 1e4 / 24 / 30 * 44
         PACT = PAKT * CO2DRY
         Tm = 2.0E-2 /24 
-        self.TROBT =  PACT / PROD[self.ICOMP-1] * Tm * (1.75/0.25) * DISSOZ# / PROD[self.ICOMP-1]
+        # 净同化为负 (衰老期呼吸大于同化) 时不生成 OBT; OBT 的分解由 kbo_bh 描述
+        self.TROBT = np.maximum(PACT / PROD[self.ICOMP-1] * Tm * (1.75/0.25) * DISSOZ, 0.0)
 
 
     # 计算植物水库室中的水含量plant_w 和 有机物含量plant_o;kg/m2; 

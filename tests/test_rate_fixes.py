@@ -35,9 +35,11 @@ def stub_state(plant_type, sta, n=3):
     air = SimpleNamespace(ML=para_constant.mixLayerH[sta - 1], rainfall=0.1 * ones, atm_h=2.0 * ones,
                           atm_w=1e9 * ones, U10=2.0 * ones, sta=sta,
                           ICOMP=para_constant.Plant_dict[plant_type]['ICOMP'])
-    soil = SimpleNamespace(VDSO=4e-3 * ones, ESOIL=0.1 * ones, Va_b1=0.01 * ones, Va_b2=0.01 * ones,
+    # Va_b1/Va_b2 change sign: the middle hour has upward flow between the layers
+    signed = np.where(np.arange(n) == 1, -0.01, 0.01)
+    soil = SimpleNamespace(VDSO=4e-3 * ones, ESOIL=0.1 * ones, Va_b1=signed, Va_b2=signed,
                            BODW1=0.3 * ones, soil1w=15.0 * ones, soil2w=30.0 * ones, soil3w=45.0 * ones)
-    plant = SimpleNamespace(VDPF=1e-2 * ones, ETRM=0.2 * ones, plant_w=2.0 * ones, plant_wh=0.22 * ones,
+    plant = SimpleNamespace(VDPF=1e-2 * ones, ROW=17.3 * ones, ETRM=0.2 * ones, plant_w=2.0 * ones, plant_wh=0.22 * ones,
                             friut_w=1.0 * ones, friut_wh=0.11 * ones, TROBT=1e-4 * ones)
     return air, soil, plant
 
@@ -85,10 +87,7 @@ def test_rates_are_finite_nonnegative_and_independent_of_stability(rate_fn, plan
         rates.append(k)
     for k in rates[1:]:
         np.testing.assert_array_equal(k, rates[0])
-    # Va_b1/Va_b2 (calc_soil_ab) can still be negative; everything else must not be
-    k = rates[0]
-    signed = [K['ks1_s2'], K['ks2_s3']]
-    assert np.all(np.delete(k, signed, axis=1) >= 0)
+    assert np.all(rates[0] >= 0)
 
 
 @pytest.mark.parametrize('rate_fn', RATE_FUNCTIONS, ids=lambda f: f.__name__)

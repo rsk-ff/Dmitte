@@ -7,6 +7,114 @@ from dmitte import para_constant
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
 
 
+# 迁移率矩阵的列顺序, 与 transfer_equotions() 的解包顺序一致
+K_NAMES = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2',
+           'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh',
+           'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh', 'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh',
+           'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
+K_INDEX = {name: i for i, name in enumerate(K_NAMES)}
+
+
+def leaf_exchange_rate(plantfx):
+    '''
+    叶片 -> 大气的 HTO 交换速率 kbh_a2, h-1
+
+    与吸收项 ka2_bh = VDPF / ML 共用同一个总导度 g = VDPF = 1/(RAM+RB+RC1):
+        吸收通量 = g * rho_v   * C_air            (rho_v: 空气水汽密度, C_air: 水汽比活度)
+        释放通量 = g * rho_sat * C_leaf / ALF_HTO
+    稳态时 C_leaf = ALF_HTO * RH * C_air。交换与净蒸腾无关, 夜间蒸腾趋于 0 时照常进行。
+    rho_sat 取气温下的饱和水汽密度 ROW (g/m3), plant_w 为植物水量 (kg/m2)。
+    '''
+    return plantfx.VDPF * (plantfx.ROW / 1000) / (para_constant.ALF_HTO * plantfx.plant_w) * 3600
+
+
+def _split_darcy(k_down, k_up, w_upper, w_lower):
+    '''
+    把可能为负的向下迁移率 k_down (上层 -> 下层) 拆成两个非负速率。
+    k_down < 0 表示水向上流: 通量 |k_down| * w_upper 改由下层提供, 加到向上的速率 k_up 上。
+    '''
+    k_down = np.asarray(k_down, dtype=np.float64)
+    k_up = k_up + np.maximum(-k_down, 0) * w_upper / w_lower
+    return np.maximum(k_down, 0), k_up
+
+
+def _assemble(k_list, n_t_step, plantfx):
+    '''
+    把各迁移率组装成 (n_t_step, 29) 的迁移率矩阵, 并处理还不存在的植物库室:
+    - 植物水量为 0 (出苗前) 的时刻, 进出植物和果实库室的迁移率都为 0;
+    - 果实/块茎水量为 0 (形成前) 的时刻, 根系吸水全部进入植物水, 不向果实迁移。
+    '''
+    k = np.array([np.full(n_t_step, v, dtype=np.float64) if np.isscalar(v) else np.asarray(v, dtype=np.float64)
+                  for v in k_list]).T
+    with np.errstate(invalid='ignore'):
+        no_plant = ~(np.broadcast_to(plantfx.plant_w, (n_t_step,)) > 0)
+        no_fruit = ~(np.broadcast_to(plantfx.friut_w, (n_t_step,)) > 0)
+    for layer in '123':
+        to_bh, to_fh = K_INDEX['ks%s_bh' % layer], K_INDEX['ks%s_fh' % layer]
+        k[no_fruit, to_bh] += k[no_fruit, to_fh]
+    fruit_rates = [K_INDEX[n] for n in ('ks1_fh', 'ks2_fh', 'ks3_fh', 'kbh_fh', 'kfh_bh', 'kbh_fo')]
+    plant_rates = fruit_rates + [K_INDEX[n] for n in ('ks1_bh', 'ks2_bh', 'ks3_bh', 'ka2_bh', 'kbh_a2',
+                                                       'kbh_so', 'kbh_bo', 'kbo_bh')]
+    k[np.ix_(no_fruit, fruit_rates)] = 0
+    k[np.ix_(no_plant, plant_rates)] = 0
+    return k
+
+
+def check_rates(k_array):
+    '''迁移率必须有限且非负, 否则抛出 ValueError 并列出有问题的迁移率。'''
+    k = np.asarray(k_array, dtype=np.float64)
+    names = K_NAMES if k.shape[-1] == len(K_NAMES) else [str(j) for j in range(k.shape[-1])]
+    problems = []
+    for j, name in enumerate(names):
+        n_bad = int((~np.isfinite(k[..., j])).sum())
+        n_neg = int((k[..., j] < 0).sum())
+        if n_bad:
+            problems.append('%s: %d non-finite' % (name, n_bad))
+        if n_neg:
+            problems.append('%s: %d negative' % (name, n_neg))
+    if problems:
+        raise ValueError('Transfer rates must be finite and >= 0 (' + '; '.join(problems) + ')')
+
+
+def water_balance_residual(k_array, airfx, soilfx, plantfx, alpha=para_constant.ALF_HTO):
+    '''
+    均匀比活度检验 (水量闭合检验), h-1
+
+    令所有水库室的比活度相同 (A_i = W_i)、不计衰变和 OBT 生成/分解、去掉叶片释放中的同位素分馏
+    (kbh_a2 乘以 alpha; kbh_a2 不含分馏因子的变体传 alpha=1), 此时 dA_i/dt / A_i 就是各迁移率隐含的
+    净水通量 / 水量。水量平衡闭合时它应等于水量的相对变化率 dlnW/dt, 通常远小于库室的周转速率 k_out;
+    偏差就是均匀比活度下出现的虚假比活度变化。大气作为边界条件, 只计它流向土壤和植物的通量。
+
+    Return
+    ---
+    {库室: {'residual', 'k_out', 'dlnW_dt'}}, 库室为 s1, s2, s3, bh, fh, 各项为逐时数组
+    '''
+    k = np.array(k_array, dtype=np.float64, copy=True)
+    n = len(k)
+    for name in ('kbh_bo', 'kbh_fo', 'kbo_bh'):
+        k[:, K_INDEX[name]] = 0
+    k[:, K_INDEX['kbh_a2']] *= alpha
+    W = {'a2': airfx.atm_h * 9, 's1': soilfx.soil1w, 's2': soilfx.soil2w, 's3': soilfx.soil3w,
+         'bh': plantfx.plant_w, 'fh': plantfx.friut_w}
+    W = {c: np.broadcast_to(np.asarray(w, dtype=np.float64), (n,)) for c, w in W.items()}
+    zero = np.zeros(n)
+    y = [zero, zero, W['a2'], W['s1'], W['s2'], W['s3'], W['bh'], zero, W['fh'], zero]
+    dy = transfer_equotions(0, y, k.T, 0.0)
+    position = {'s1': 3, 's2': 4, 's3': 5, 'bh': 6, 'fh': 8}
+    outflows = {'s1': ('ks1_a2', 'ks1_bh', 'ks1_fh', 'ks1_s2'),
+                's2': ('ks2_s1', 'ks2_bh', 'ks2_fh', 'ks2_s3'),
+                's3': ('ks3_s3', 'ks3_bh', 'ks3_fh', 'ks3_s2'),
+                'bh': ('kbh_a2', 'kbh_so', 'kbh_fh'),
+                'fh': ('kfh_bh',)}
+    out = {}
+    with np.errstate(divide='ignore', invalid='ignore'):
+        for c, i in position.items():
+            out[c] = {'residual': dy[i] / W[c],
+                      'k_out': sum(k[:, K_INDEX[name]] for name in outflows[c]),
+                      'dlnW_dt': np.gradient(np.log(W[c])) if n > 1 else zero}
+    return out
+
+
 def transfer_rates(char: str, 
                    plant_type: str, 
                    airfx: Calc_air, 
@@ -32,9 +140,12 @@ def transfer_rates(char: str,
     ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
     ks1_s2 = soilfx.Va_b1 / 100
     ks2_s3 = soilfx.Va_b2 / 150
+    ks1_s2, ks2_s1 = _split_darcy(ks1_s2, ks2_s1, soilfx.soil1w, soilfx.soil2w)
+    ks2_s3, ks3_s2 = _split_darcy(ks2_s3, ks3_s2, soilfx.soil2w, soilfx.soil3w)
     kbh_so = 3E-4
     ka2_bh = (plantfx.VDPF / airfx.ML * 3600) + (airfx.rainfall /9) / airfx.atm_h
-    kbh_a2 = plantfx.ETRM / (plantfx.plant_w)
+    k_tr = plantfx.ETRM / plantfx.plant_w            # 蒸腾引起的植物水周转, 只用于液流 (根系吸水、植物->果实)
+    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
     kbo_bh = (np.log(2) / 10) /24
     
     if char.upper() == 'HT':
@@ -87,20 +198,20 @@ def transfer_rates(char: str,
         ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2* (1/6)
         ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4* (1/6)
         ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4* (1/6)
-        kbh_fh = (kbh_a2 /2) * (1/6) 
+        kbh_fh = (k_tr /2) * (1/6) 
         kfh_bh = kbh_fh * (plantfx.plant_w / plantfx.friut_w ) 
         kbh_fo = np.log(2)/(para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'TUBER_VEG':
-        ks1_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
-        ks2_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
-        ks3_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
-        ks1_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
-        ks2_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
-        ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
-        kbh_fh = (kbh_a2 /2) * (1/6) 
-        kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
+        ks1_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
+        ks2_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
+        ks3_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
+        ks1_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
+        ks2_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
+        ks3_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
+        kbh_fh = (k_tr /2) * (1/6) 
+        kfh_bh = (k_tr /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
         kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
@@ -113,11 +224,7 @@ def transfer_rates(char: str,
               ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
               kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
 
-    n_t_step = len(airfx.U10)
-
-    k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
-
-    return k_array.T
+    return _assemble(k_list, len(airfx.U10), plantfx)
 
 
 def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
@@ -140,7 +247,7 @@ def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
     dA_a1_dt = ks0_a1 * A_s0 - (ka1_a1 + ka1_a2 + ka1_s0 + LAMBDA_T) * A_a1
     dA_s0_dt = ka1_s0 * A_a1 - (ks0_a1 + ks0_s1 + ks0_s2 + ks0_s3 + LAMBDA_T) * A_s0
     dA_a2_dt = ka1_a2 * A_a1 + ks1_a2 * A_s1 + kbh_a2 * A_bh - (ka2_a2 + ka2_bh + ka2_s1 + LAMBDA_T) * A_a2
-    dA_s1_dt = ks0_s1 * A_s0 + ka2_s1 * A_a2 + ks2_s1 * A_s2 - (ks1_a2 + ks1_bh + ks1_fh + ks1_s2 + LAMBDA_T) * A_s1
+    dA_s1_dt = ks0_s1 * A_s0 + ka2_s1 * A_a2 + ks2_s1 * A_s2 + kbh_so * A_bh - (ks1_a2 + ks1_bh + ks1_fh + ks1_s2 + LAMBDA_T) * A_s1
     dA_s2_dt = ks0_s2 * A_s0 + ks1_s2 * A_s1 + ks3_s2 * A_s3 - (ks2_s1 + ks2_bh + ks2_fh + ks2_s3 + LAMBDA_T) * A_s2
     dA_s3_dt = ks0_s3 * A_s0 + ks2_s3 * A_s2 - (ks3_s3 + ks3_bh + ks3_fh + ks3_s2 + LAMBDA_T) * A_s3
     dA_bh_dt = ka2_bh * A_a2 + ks1_bh * A_s1 + ks2_bh * A_s2 + ks3_bh * A_s3 + kbo_bh * A_bo + kfh_bh * A_fh - (kbh_a2 + kbh_so + kbh_bo + kbh_fh + kbh_fo + LAMBDA_T) * A_bh
@@ -175,6 +282,7 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
         return sol.y.squeeze()
     # Preserve caller-owned transfer rates; the first-step adjustments are solver-local.
     k_array = np.array(k_array, dtype=np.float64, copy=True)
+    check_rates(k_array)
     char = char.upper()
     k_array[0, 0] = 0
     k_array[0, 17] = 0
@@ -316,11 +424,7 @@ def transfer_rates_UFORTI(char: str,
               ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
               kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
 
-    n_t_step = len(airfx.U10)
-
-    k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
-
-    return k_array.T
+    return _assemble(k_list, len(airfx.U10), plantfx)
 
 
 def transfer_rates_Korea(char: str, 
@@ -348,9 +452,12 @@ def transfer_rates_Korea(char: str,
     ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
     ks1_s2 = soilfx.Va_b1 / 100
     ks2_s3 = soilfx.Va_b2 / 150
+    ks1_s2, ks2_s1 = _split_darcy(ks1_s2, ks2_s1, soilfx.soil1w, soilfx.soil2w)
+    ks2_s3, ks3_s2 = _split_darcy(ks2_s3, ks3_s2, soilfx.soil2w, soilfx.soil3w)
     kbh_so = 3E-4
     ka2_bh = (plantfx.VDPF / airfx.ML * 3600) + (airfx.rainfall /9) / airfx.atm_h
-    kbh_a2 = plantfx.ETRM / (plantfx.plant_w)
+    k_tr = plantfx.ETRM / plantfx.plant_w            # 蒸腾引起的植物水周转, 只用于液流 (根系吸水、植物->果实)
+    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
     kbo_bh = (np.log(2) / 10) /24
     
     if char.upper() == 'HT':
@@ -403,20 +510,20 @@ def transfer_rates_Korea(char: str,
         ks1_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
         ks2_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
         ks3_fh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
-        kbh_fh = (kbh_a2 /2) * (1/6) 
+        kbh_fh = (k_tr /2) * (1/6) 
         kfh_bh = kbh_fh * (plantfx.plant_w / plantfx.friut_w ) 
         kbh_fo = np.log(2)/(para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'TUBER_VEG':
-        ks1_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
-        ks2_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
-        ks3_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
-        ks1_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
-        ks2_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
-        ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
-        kbh_fh = (kbh_a2 /2) * (1/6) 
-        kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
+        ks1_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
+        ks2_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
+        ks3_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
+        ks1_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
+        ks2_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
+        ks3_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
+        kbh_fh = (k_tr /2) * (1/6) 
+        kfh_bh = (k_tr /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
         kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
@@ -429,11 +536,7 @@ def transfer_rates_Korea(char: str,
               ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
               kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
 
-    n_t_step = len(airfx.U10)
-
-    k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
-
-    return k_array.T
+    return _assemble(k_list, len(airfx.U10), plantfx)
 
 
 def transfer_rates_baomi(char: str, 
@@ -461,7 +564,8 @@ def transfer_rates_baomi(char: str,
     ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
     kbh_so = 3E-4
     ka2_bh = (plantfx.VDPF / airfx.ML * 3600) + (airfx.rainfall /9) / airfx.atm_h
-    kbh_a2 = plantfx.ETRM / (plantfx.plant_w) * 100
+    k_tr = plantfx.ETRM / plantfx.plant_w            # 蒸腾引起的植物水周转, 只用于液流 (根系吸水、植物->果实)
+    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
     kbo_bh = (np.log(2) / 10) /24
     
     if char.upper() == 'HT':
@@ -520,14 +624,14 @@ def transfer_rates_baomi(char: str,
         kbh_bo = plantfx.TROBT
 
     elif plant_type.upper() == 'TUBER_VEG':
-        ks1_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
-        ks2_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
-        ks3_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
-        ks1_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
-        ks2_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
-        ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
-        kbh_fh = (kbh_a2 /2) * (1/6) 
-        kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
+        ks1_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
+        ks2_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
+        ks3_bh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
+        ks1_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
+        ks2_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
+        ks3_fh = ((k_tr/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
+        kbh_fh = (k_tr /2) * (1/6) 
+        kfh_bh = (k_tr /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
         kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
         kbh_bo = plantfx.TROBT
 
@@ -544,11 +648,7 @@ def transfer_rates_baomi(char: str,
               ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
               kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
 
-    n_t_step = len(airfx.U10)
-
-    k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
-
-    return k_array.T
+    return _assemble(k_list, len(airfx.U10), plantfx)
 
 
 def transfer_rates_morris(char: str, 
@@ -576,7 +676,7 @@ def transfer_rates_morris(char: str,
     ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
     kbh_so = 3E-4
     ka2_bh = (plantfx.VDPF / airfx.ML * 3600) + (airfx.rainfall /9) / airfx.atm_h
-    kbh_a2 = plantfx.ETRM / (plantfx.plant_w) * 100
+    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
     kbo_bh = (np.log(2) / 10) /24
             
     ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
@@ -602,9 +702,5 @@ def transfer_rates_morris(char: str,
               ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
               kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
 
-    n_t_step = len(airfx.U10)
-
-    k_array = np.array([np.full(n_t_step, k, dtype=np.float64) if np.isscalar(k) else k for k in k_list])
-
-    return k_array.T
+    return _assemble(k_list, len(airfx.U10), plantfx)
 

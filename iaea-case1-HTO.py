@@ -69,7 +69,7 @@ plantfx = Calc_plant(pcse_results, start_date, end_date, plant_type, stability, 
 k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
 # %%
-As = solve_con('HTO', 6.15066907e+08, np.abs(k_array), LAMBDA_T_H)
+As = solve_con('HTO', 6.15066907e+08, k_array, LAMBDA_T_H)
 
 # %%
 harvest_time = 2160
