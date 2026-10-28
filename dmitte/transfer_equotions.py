@@ -162,92 +162,82 @@ def water_balance_residual(k_array, airfx, soilfx, plantfx, alpha=para_constant.
     return out
 
 
-def transfer_rates(char: str, 
-                   plant_type: str, 
-                   airfx: Calc_air, 
-                   soilfx: Calc_soil, 
-                   plantfx: Calc_plant) -> np.ndarray:
+def transfer_rates(char: str,
+                   plant_type: str,
+                   airfx: Calc_air,
+                   soilfx: Calc_soil,
+                   plantfx: Calc_plant,
+                   percolation: str = para_constant.PERCOLATION,
+                   kbh_fh: float = para_constant.KBH_FH) -> np.ndarray:
     '''
     计算迁移率矩阵
 
     Parameters:
     ---
     char: 'HT' or 'HTO', HT 或者 HTO 释放
+    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG'
     airfx: 大气相关参数类
     soilfx: 土壤参数计算类
     plantfx: 植物相关参数类
-    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG' or 'TUBER_VEG'
+    percolation: 土壤层间下渗, 'constant' 为常数通量 (第 1->2 层 0.181*9/24, 第 2->3 层 0.072*9/24 kg m-2 h-1),
+                 'darcy' 为 calc_soil_ab 的达西通量 (向上流时由 _split_darcy 拆成下层 -> 上层)
+    kbh_fh: 植物水 -> 果实水的交换速率, h-1; 生长所需的净液流由 plant_water_routes 另加
 
     Return:
     ---
-    k_array: 迁移率矩阵
+    k_array: 迁移率矩阵, (小时数, 29), 列顺序见 K_NAMES
     '''
     ka2_s1 = (soilfx.VDSO / airfx.ML * 3600) + (airfx.rainfall / 9) / airfx.atm_h
     ks3_s2 = ks3_s3 = 3.42E-4
     ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
-    ks1_s2 = soilfx.Va_b1 / 100
-    ks2_s3 = soilfx.Va_b2 / 150
-    ks1_s2, ks2_s1 = _split_darcy(ks1_s2, ks2_s1, soilfx.soil1w, soilfx.soil2w)
-    ks2_s3, ks3_s2 = _split_darcy(ks2_s3, ks3_s2, soilfx.soil2w, soilfx.soil3w)
+    if percolation == 'darcy':
+        ks1_s2, ks2_s1 = _split_darcy(soilfx.Va_b1 / 100, ks2_s1, soilfx.soil1w, soilfx.soil2w)
+        ks2_s3, ks3_s2 = _split_darcy(soilfx.Va_b2 / 150, ks3_s2, soilfx.soil2w, soilfx.soil3w)
+    elif percolation == 'constant':
+        ks1_s2 = 0.181 * 9 / soilfx.soil1w / 24
+        ks2_s3 = 0.072 * 9 / soilfx.soil2w / 24
+    else:
+        raise ValueError("Unsupported percolation: '{}'.".format(percolation))
     kbh_so = 3E-4
     ka2_bh = plantfx.VDPF / airfx.ML * 3600          # 降雨不截留在植物上, 只进入土壤 (ka2_s1)
-    k_tr = plantfx.ETRM / plantfx.plant_w            # 蒸腾引起的植物水周转, 只用于液流 (根系吸水、植物->果实)
-    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
+    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 对称交换
     kbo_bh = para_constant.KBO_BH
-    
+
     if char.upper() == 'HT':
-        ka1_a1 = 0.693 
-        ka2_a2 = 0 
+        ka1_a1 = 0.693
+        ka2_a2 = 0
         ka1_a2 = 4E-3
-        ka1_s0 = 4.5e-4 / airfx.ML * 3600 
+        ka1_s0 = 4.5e-4 / airfx.ML * 3600
         ks0_s1 = 0.2
         ks0_s2 = 0.02
         ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
-        
+        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1)
+
     elif char.upper() == 'HTO':
         ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
         ka2_a2 = 0.693
-        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
+        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1)
 
     else:
         raise ValueError("Unsupported char: '{}'.".format(char))
 
-
-    if plant_type.upper() == 'LEAFY_PLANT':  
-        fruit_share = None
-        kbh_fh = 0
-        kbh_fo = 0
-        kbh_bo = 0
-
+    # fruit_share: 根系吸水中直接进入果实 (块茎) 的份额; None 表示没有果实库室
+    kbh_bo = plantfx.TROBT
+    if plant_type.upper() == 'LEAFY_PLANT':
+        fruit_share, kbh_fo = None, 0
     elif plant_type.upper() == 'CEREAL':
-        fruit_share = 0
-        kbh_fh = (np.log(2) / 2) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
+        fruit_share, kbh_fo = 0, plantfx.TROBT_FRUIT
     elif plant_type.upper() == 'ROOT_VEG':
-        fruit_share = 1 / 6
-        kbh_fh = (k_tr /2) * (1/6) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    elif plant_type.upper() == 'TUBER_VEG':
-        fruit_share = 1 / 6
-        kbh_fh = (k_tr /2) * (1/6) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
+        fruit_share, kbh_fo = 1 / 6, plantfx.TROBT_FRUIT
     else:
         raise ValueError("Unsupported plant type: '{}'.".format(plant_type))
-
 
     ks1_bh, ks2_bh, ks3_bh, ks1_fh, ks2_fh, ks3_fh, kbh_fh, kfh_bh = plant_water_routes(
         airfx, soilfx, plantfx, kbh_so, kbh_fh, fruit_share)
 
-    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
-              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
-              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
+    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2,
+              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh,
+              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh,
               kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
 
     return _assemble(k_list, len(airfx.U10), plantfx)
@@ -345,346 +335,3 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
         raise ValueError("Unsupported char: '{}'.".format(char))
 
     return As
-
-
-def transfer_rates_UFORTI(char: str, 
-                   plant_type: str, 
-                   airfx: Calc_air, 
-                   soilfx: Calc_soil, 
-                   plantfx: Calc_plant) -> np.ndarray:
-    '''
-    计算迁移率矩阵
-
-    Parameters:
-    ---
-    char: 'HT' or 'HTO', HT 或者 HTO 释放
-    airfx: 大气相关参数类
-    soilfx: 土壤参数计算类
-    plantfx: 植物相关参数类
-    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG' or 'TUBER_VEG'
-
-    Return:
-    ---
-    k_array: 迁移率矩阵
-    '''
-    ka2_s1 = 0.68 / 24
-    ks3_s2 = ks3_s3 = 8.2e-3 / 24
-    ks2_s1 = 1.2e-2 / 24
-    ks1_s2 = 0.15 / 24
-    ks2_s3 = 5.0e-2 / 24
-    kbh_so = 0
-    ka2_bh = 0.205 / 24
-    kbh_a2 = 8.3 / 24
-    kbo_bh = 6.9e-2 / 24
-    
-    if char.upper() == 'HT':
-        ka1_a1 = 0.693 
-        ka2_a2 = 0 
-        ka1_a2 = 4E-3
-        ka1_s0 = 4.5e-4 / airfx.ML * 3600 
-        ks0_s1 = 0.2
-        ks0_s2 = 0.02
-        ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
-        
-    elif char.upper() == 'HTO':
-        ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
-        ka2_a2 = 0.693
-        ks1_a2 = 0.27 / 24
-
-    else:
-        raise ValueError("Unsupported char: '{}'.".format(char))
-
-
-    if plant_type.upper() == 'LEAFY_PLANT':  
-        ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
-        ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
-        ks1_fh = 0
-        ks2_fh = 0
-        ks3_fh = 0
-        kbh_fh = 0
-        kfh_bh = 0
-        kbh_fo = 0
-        kbh_bo = 0
-
-    elif plant_type.upper() == 'CEREAL':
-        ks1_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil1w) * 0.2
-        ks2_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil2w) * 0.4
-        ks3_bh = (ka2_bh * airfx.atm_h * 9 / soilfx.soil3w) * 0.4
-        ks1_fh = 0
-        ks2_fh = 0
-        ks3_fh = 0
-        kbh_fh = (np.log(2) / 2) 
-        kfh_bh = kbh_fh * plantfx.plant_w / plantfx.friut_w        
-        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
-        kbh_bo = plantfx.TROBT
-
-    elif plant_type.upper() == 'ROOT_VEG':
-        ks1_bh = 4.4e-2 / 24
-        ks2_bh = 4.4e-2 / 24
-        ks3_bh = 2.9e-2 / 24
-        ks1_fh = 8.8e-3 / 24
-        ks2_fh = 8.8e-3 / 24
-        ks3_fh = 5.8e-3 / 24
-        kbh_fh = 0.2 / 24
-        kfh_bh = 0.47 / 24
-        kbh_fo = 2.0e-2 / 24
-        kbh_bo = 1.2e-2 / 24
-
-    elif plant_type.upper() == 'TUBER_VEG':
-        ks1_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (5/6)
-        ks2_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (5/6)
-        ks3_bh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (5/6)
-        ks1_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil1w) * 0.2 * (1/6)
-        ks2_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil2w) * 0.4 * (1/6)
-        ks3_fh = ((kbh_a2/2) * plantfx.plant_w  / soilfx.soil3w) * 0.4 * (1/6)
-        kbh_fh = (kbh_a2 /2) * (1/6) 
-        kfh_bh = (kbh_a2 /2) * (plantfx.plant_w / plantfx.friut_w )  * (2/6)
-        kbh_fo = np.log(2) / (para_constant.HWZ[airfx.ICOMP-1]/2) * (plantfx.friut_wh / plantfx.plant_wh) / 24
-        kbh_bo = plantfx.TROBT
-
-    else:
-        raise ValueError("Unsupported plant type: '{}'.".format(plant_type))
-
-
-    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
-              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
-              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
-              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
-
-    return _assemble(k_list, len(airfx.U10), plantfx)
-
-
-def transfer_rates_Korea(char: str, 
-                   plant_type: str, 
-                   airfx: Calc_air, 
-                   soilfx: Calc_soil, 
-                   plantfx: Calc_plant) -> np.ndarray:
-    '''
-    计算迁移率矩阵
-
-    Parameters:
-    ---
-    char: 'HT' or 'HTO', HT 或者 HTO 释放
-    airfx: 大气相关参数类
-    soilfx: 土壤参数计算类
-    plantfx: 植物相关参数类
-    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG' or 'TUBER_VEG'
-
-    Return:
-    ---
-    k_array: 迁移率矩阵
-    '''
-    ka2_s1 = (soilfx.VDSO / airfx.ML * 3600) + (airfx.rainfall / 9) / airfx.atm_h
-    ks3_s2 = ks3_s3 = 3.42E-4
-    ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
-    ks1_s2 = soilfx.Va_b1 / 100
-    ks2_s3 = soilfx.Va_b2 / 150
-    ks1_s2, ks2_s1 = _split_darcy(ks1_s2, ks2_s1, soilfx.soil1w, soilfx.soil2w)
-    ks2_s3, ks3_s2 = _split_darcy(ks2_s3, ks3_s2, soilfx.soil2w, soilfx.soil3w)
-    kbh_so = 3E-4
-    ka2_bh = plantfx.VDPF / airfx.ML * 3600          # 降雨不截留在植物上, 只进入土壤 (ka2_s1)
-    k_tr = plantfx.ETRM / plantfx.plant_w            # 蒸腾引起的植物水周转, 只用于液流 (根系吸水、植物->果实)
-    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
-    kbo_bh = para_constant.KBO_BH
-    
-    if char.upper() == 'HT':
-        ka1_a1 = 0.693 
-        ka2_a2 = 0 
-        ka1_a2 = 4E-3
-        ka1_s0 = 4.5e-4 / airfx.ML * 3600 
-        ks0_s1 = 0.2
-        ks0_s2 = 0.02
-        ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
-        
-    elif char.upper() == 'HTO':
-        ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
-        ka2_a2 = 0.693
-        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
-
-    else:
-        raise ValueError("Unsupported char: '{}'.".format(char))
-
-
-    if plant_type.upper() == 'LEAFY_PLANT':  
-        fruit_share = None
-        kbh_fh = 0
-        kbh_fo = 0
-        kbh_bo = 0
-
-    elif plant_type.upper() == 'CEREAL':
-        fruit_share = 0
-        kbh_fh = (np.log(2) / 2) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    elif plant_type.upper() == 'ROOT_VEG':
-        fruit_share = 1
-        kbh_fh = (k_tr /2) * (1/6) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    elif plant_type.upper() == 'TUBER_VEG':
-        fruit_share = 1 / 6
-        kbh_fh = (k_tr /2) * (1/6) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    else:
-        raise ValueError("Unsupported plant type: '{}'.".format(plant_type))
-
-
-    ks1_bh, ks2_bh, ks3_bh, ks1_fh, ks2_fh, ks3_fh, kbh_fh, kfh_bh = plant_water_routes(
-        airfx, soilfx, plantfx, kbh_so, kbh_fh, fruit_share)
-
-    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
-              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
-              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
-              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
-
-    return _assemble(k_list, len(airfx.U10), plantfx)
-
-
-def transfer_rates_baomi(char: str, 
-                   plant_type: str, 
-                   airfx: Calc_air, 
-                   soilfx: Calc_soil, 
-                   plantfx: Calc_plant) -> np.ndarray:
-    '''
-    计算迁移率矩阵
-
-    Parameters:
-    ---
-    char: 'HT' or 'HTO', HT 或者 HTO 释放
-    airfx: 大气相关参数类
-    soilfx: 土壤参数计算类
-    plantfx: 植物相关参数类
-    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG' or 'TUBER_VEG'
-
-    Return:
-    ---
-    k_array: 迁移率矩阵
-    '''
-    ka2_s1 = (soilfx.VDSO / airfx.ML * 3600) + (airfx.rainfall / 9) / airfx.atm_h
-    ks3_s2 = ks3_s3 = 3.42E-4
-    ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
-    kbh_so = 3E-4
-    ka2_bh = plantfx.VDPF / airfx.ML * 3600          # 降雨不截留在植物上, 只进入土壤 (ka2_s1)
-    k_tr = plantfx.ETRM / plantfx.plant_w            # 蒸腾引起的植物水周转, 只用于液流 (根系吸水、植物->果实)
-    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
-    kbo_bh = para_constant.KBO_BH
-    
-    if char.upper() == 'HT':
-        ka1_a1 = 0.693 
-        ka2_a2 = 0 
-        ka1_a2 = 4E-3
-        ka1_s0 = 4.5e-4 / airfx.ML * 3600 
-        ks0_s1 = 0.2
-        ks0_s2 = 0.02
-        ks0_s3 = 0.02
-        ks0_a1 = ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (0.5+0.1) 
-        
-    elif char.upper() == 'HTO':
-        ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
-        ka2_a2 = 0.693
-        ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
-
-    else:
-        raise ValueError("Unsupported char: '{}'.".format(char))
-
-
-    if plant_type.upper() == 'LEAFY_PLANT':  
-        fruit_share = None
-        kbh_fh = 0
-        kbh_fo = 0
-        kbh_bo = 0
-
-    elif plant_type.upper() == 'CEREAL':
-        fruit_share = 0
-        kbh_fh = (np.log(2) / 2) / 40
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    elif plant_type.upper() == 'ROOT_VEG':
-        fruit_share = 1 / 6
-        kbh_fh = np.log(2) / 2 / 40
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    elif plant_type.upper() == 'TUBER_VEG':
-        fruit_share = 1 / 6
-        kbh_fh = (k_tr /2) * (1/6) 
-        kbh_fo = plantfx.TROBT_FRUIT
-        kbh_bo = plantfx.TROBT
-
-    else:
-        raise ValueError("Unsupported plant type: '{}'.".format(plant_type))
-
-    
-    # ks1_s2 = (ka2_s1 * airfx.atm_w + ks2_s1 * soilfx.soil2w - ks1_bh * soilfx.soil1w - ks1_a2 * soilfx.soil1w) / soilfx.soil1w
-    ks1_s2 = 0.181 * 9 / soilfx.soil1w / 24
-    ks2_s3 = 0.072 * 9 / soilfx.soil2w / 24
-
-    ks1_bh, ks2_bh, ks3_bh, ks1_fh, ks2_fh, ks3_fh, kbh_fh, kfh_bh = plant_water_routes(
-        airfx, soilfx, plantfx, kbh_so, kbh_fh, fruit_share)
-
-    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
-              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
-              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
-              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
-
-    return _assemble(k_list, len(airfx.U10), plantfx)
-
-
-def transfer_rates_morris(char: str, 
-                   plant_type: str, 
-                   airfx: Calc_air, 
-                   soilfx: Calc_soil, 
-                   plantfx: Calc_plant) -> np.ndarray:
-    '''
-    计算迁移率矩阵
-
-    Parameters:
-    ---
-    char: 'HT' or 'HTO', HT 或者 HTO 释放
-    airfx: 大气相关参数类
-    soilfx: 土壤参数计算类
-    plantfx: 植物相关参数类
-    plant_type: 植物类型, 'LEAFY_PLANT' or 'CEREAL' or 'ROOT_VEG' or 'TUBER_VEG'
-
-    Return:
-    ---
-    k_array: 迁移率矩阵
-    '''
-    ka2_s1 = (soilfx.VDSO / airfx.ML * 3600) + (airfx.rainfall / 9) / airfx.atm_h
-    ks3_s2 = ks3_s3 = 3.42E-4
-    ks2_s1 = ks3_s3 * soilfx.soil3w / soilfx.soil2w
-    kbh_so = 3E-4
-    ka2_bh = plantfx.VDPF / airfx.ML * 3600          # 降雨不截留在植物上, 只进入土壤 (ka2_s1)
-    kbh_a2 = leaf_exchange_rate(plantfx)             # 叶片-大气 HTO 交换 (对称形式, 不再用蒸腾)
-    kbo_bh = para_constant.KBO_BH
-            
-    ka1_a1 = ka1_s0 =ka1_a2 =ks0_a1= ks0_s1 =ks0_s2 = ks0_s3=0
-    ka2_a2 = 0.693
-    ks1_a2 = soilfx.ESOIL / soilfx.soil1w * (1+0.1) 
-
-    fruit_share = 1 / 6
-    kbh_fh = np.log(2) / 2 / 40
-    kbh_fo = plantfx.TROBT_FRUIT
-    kbh_bo = plantfx.TROBT
-   
-    ks1_s2 = 0.181 * 9 / soilfx.soil1w / 24
-    ks2_s3 = 0.072 * 9 / soilfx.soil2w / 24
-
-    ks1_bh, ks2_bh, ks3_bh, ks1_fh, ks2_fh, ks3_fh, kbh_fh, kfh_bh = plant_water_routes(
-        airfx, soilfx, plantfx, kbh_so, kbh_fh, fruit_share)
-
-    k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, 
-              ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, 
-              ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, 
-              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
-
-    return _assemble(k_list, len(airfx.U10), plantfx)
-

@@ -1,4 +1,5 @@
 """Conservation, rate-sign, leaf-exchange and plant-process tests (review step 2, item 8 and step 3)."""
+from functools import partial
 from types import SimpleNamespace
 
 import numpy as np
@@ -8,10 +9,11 @@ from dmitte import para_constant
 from dmitte.calc_para import Calc_plant
 from dmitte.transfer_equotions import (K_INDEX, K_NAMES, ROOT_LAYER_SHARE, _rate_of_change, _split_darcy,
                                        check_rates, leaf_exchange_rate, net_transpiration, solve_con,
-                                       transfer_equotions, transfer_rates, transfer_rates_baomi,
-                                       transfer_rates_Korea, transfer_rates_morris, water_balance_residual)
+                                       transfer_equotions, transfer_rates, water_balance_residual)
 
-SYMMETRIC = [transfer_rates, transfer_rates_Korea, transfer_rates_baomi, transfer_rates_morris]
+# both soil percolation options of transfer_rates
+SYMMETRIC = [partial(transfer_rates, percolation=p) for p in ('constant', 'darcy')]
+RATE_IDS = lambda f: f.keywords['percolation']
 EXTERNAL_SINKS = ['ka1_a1', 'ka2_a2', 'ks3_s3']    # HT/HTO dispersion out of the column, deep percolation
 
 
@@ -78,7 +80,7 @@ def test_split_darcy_turns_upward_flow_into_a_rate_from_the_lower_layer():
     np.testing.assert_allclose(k_up, [1e-3, 1e-3 + 0.02 * 15 / 30])
 
 
-@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=RATE_IDS)
 def test_rates_are_valid_before_the_fruit_and_the_plant_exist(rate_fn):
     air, soil, plant = stub_state(n=6)
     plant.friut_w = plant.friut_wh = np.array([0.0, 0.0, 1.0, 1.0, 1.0, 1.0])
@@ -100,7 +102,7 @@ def test_rates_are_valid_before_the_fruit_and_the_plant_exist(rate_fn):
     np.testing.assert_allclose(k[4:], k_ref[4:])
 
 
-@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=RATE_IDS)
 @pytest.mark.parametrize('plant_type', ['CEREAL', 'ROOT_VEG', 'LEAFY_PLANT'])
 def test_plant_and_fruit_water_balance_closes(rate_fn, plant_type):
     # growing plant and fruit, transpiring (rho_v 9 g/m3 < rho_sat 17.3 g/m3)
@@ -113,7 +115,7 @@ def test_plant_and_fruit_water_balance_closes(rate_fn, plant_type):
     check_rates(k)
     res = water_balance_residual(k, air, soil, plant)
     np.testing.assert_allclose(res['bh']['residual'], _rate_of_change(plant.plant_w) / plant.plant_w, atol=1e-12)
-    has_fruit = plant_type != 'LEAFY_PLANT' or rate_fn is transfer_rates_morris   # morris ignores plant_type
+    has_fruit = plant_type != 'LEAFY_PLANT'
     if has_fruit:
         np.testing.assert_allclose(res['fh']['residual'], _rate_of_change(plant.friut_w) / plant.friut_w,
                                    atol=1e-12)
@@ -131,9 +133,9 @@ def test_plant_and_fruit_water_balance_closes(rate_fn, plant_type):
 
 def test_rain_is_not_intercepted_by_the_plant():
     air, soil, plant = stub_state()
-    k_dry = transfer_rates_baomi('HTO', 'ROOT_VEG', air, soil, plant)
+    k_dry = transfer_rates('HTO', 'ROOT_VEG', air, soil, plant)
     air.rainfall = np.full(4, 2.0)                      # mm/h
-    k_wet = transfer_rates_baomi('HTO', 'ROOT_VEG', air, soil, plant)
+    k_wet = transfer_rates('HTO', 'ROOT_VEG', air, soil, plant)
     np.testing.assert_array_equal(k_wet[:, K_INDEX['ka2_bh']], k_dry[:, K_INDEX['ka2_bh']])
     assert np.all(k_wet[:, K_INDEX['ka2_s1']] > k_dry[:, K_INDEX['ka2_s1']])
 
@@ -193,7 +195,7 @@ def test_chronic_shoot_obt_reaches_discrimination_factor():
     assert a_bo / (para_constant.COMB_WATER * m_veg[-1]) == pytest.approx(para_constant.ID_OBT, rel=0.05)
 
 
-@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=RATE_IDS)
 def test_leaf_exchange_reaches_isotopic_equilibrium_with_air(rate_fn):
     rho_v = 12.0
     air, soil, plant = stub_state(rho_v=rho_v)
@@ -204,7 +206,7 @@ def test_leaf_exchange_reaches_isotopic_equilibrium_with_air(rate_fn):
     np.testing.assert_allclose(ratio, para_constant.ALF_HTO * rho_v / plant.ROW)
 
 
-@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=RATE_IDS)
 def test_leaf_releases_hto_without_transpiration(rate_fn):
     air, soil, plant = stub_state()
     plant.ETRM = np.zeros(4)                           # night: no net transpiration

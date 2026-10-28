@@ -2,7 +2,7 @@
 from dmitte.guassian import gaussian_puff_model
 from dmitte import run_wofost
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
-from dmitte.transfer_equotions import transfer_rates, solve_con, transfer_rates_UFORTI, transfer_rates_baomi
+from dmitte.transfer_equotions import transfer_rates, solve_con
 from dmitte.para_constant import LAMBDA_T_H, DOSE_COEF_HTO, DOSE_COEF_OBT
 
 from plot_config import *
@@ -45,24 +45,15 @@ airfx =  Calc_air(pcse_results, start_date, end_date, plant_type, stability, HEG
 soilfx = Calc_soil(pcse_results, start_date, end_date, plant_type, stability, HEG, x)
 plantfx = Calc_plant(pcse_results, start_date, end_date, plant_type, stability, HEG, x,drymatter)
 
-k_array = transfer_rates_baomi(char, plant_type, airfx, soilfx, plantfx)
-k_array_ufotri = transfer_rates_UFORTI(char, plant_type, airfx, soilfx, plantfx)
+k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
 columns_k = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2',
               'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 
               'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh', 'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 
               'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
 k_df = pd.DataFrame(k_array, columns=columns_k)
-k_ufotri_df = pd.DataFrame(k_array_ufotri, columns=columns_k)
 
 k_df.to_csv('data/output/transfer_rates.csv', index=False)
-
-# %%
-for k_name in columns_k:
-    fig, ax = plt.subplots()
-    ax.plot(k_df[k_name] / k_ufotri_df[k_name])
-    ax.set_title(k_name)
-    fig.savefig('figures/k_compare/'+k_name+'.png', dpi=600, format='png')
 
 # %% --------------------------Case 1-------------------------------------
 # k_array[:, 25] = k_array[:, 25] / 1000
@@ -139,24 +130,15 @@ airfx =  Calc_air(pcse_results, start_date, end_date, plant_type, stability, HEG
 soilfx = Calc_soil(pcse_results, start_date, end_date, plant_type, stability, HEG, x)
 plantfx = Calc_plant(pcse_results, start_date, end_date, plant_type, stability, HEG, x,drymatter)
 
-k_array = transfer_rates_baomi(char, plant_type, airfx, soilfx, plantfx)
-k_array_ufotri = transfer_rates_UFORTI(char, plant_type, airfx, soilfx, plantfx)
+k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
 columns_k = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2',
               'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 
               'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh', 'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 
               'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
 k_df = pd.DataFrame(k_array, columns=columns_k)
-k_ufotri_df = pd.DataFrame(k_array_ufotri, columns=columns_k)
 
 k_df.to_csv('data/output/transfer_rates.csv', index=False)
-
-# %%
-for k_name in columns_k:
-    fig, ax = plt.subplots()
-    ax.plot(k_df[k_name] / k_ufotri_df[k_name])
-    ax.set_title(k_name)
-    fig.savefig('figures/k_compare/'+k_name+'.png', dpi=600, format='png')
 
 # %% --------------------------Case 1-------------------------------------
 As = solve_con('HTO', 1.15224004e+09, k_array, LAMBDA_T_H)
@@ -212,24 +194,15 @@ airfx =  Calc_air(pcse_results, start_date, end_date, plant_type, stability, HEG
 soilfx = Calc_soil(pcse_results, start_date, end_date, plant_type, stability, HEG, x)
 plantfx = Calc_plant(pcse_results, start_date, end_date, plant_type, stability, HEG, x,drymatter)
 
-k_array = transfer_rates_baomi(char, plant_type, airfx, soilfx, plantfx)
-k_array_ufotri = transfer_rates_UFORTI(char, plant_type, airfx, soilfx, plantfx)
+k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
 columns_k = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2',
               'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 
               'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh', 'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 
               'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
 k_df = pd.DataFrame(k_array, columns=columns_k)
-k_ufotri_df = pd.DataFrame(k_array_ufotri, columns=columns_k)
 
 k_df.to_csv('data/output/transfer_rates.csv', index=False)
-
-# %%
-for k_name in columns_k:
-    fig, ax = plt.subplots()
-    ax.plot(k_df[k_name] / k_ufotri_df[k_name])
-    ax.set_title(k_name)
-    fig.savefig('figures/k_compare/'+k_name+'.png', dpi=600, format='png')
 
 # %% --------------------------Case 1-------------------------------------
 As = solve_con('HTO', 5.7351502e+09, k_array, LAMBDA_T_H)

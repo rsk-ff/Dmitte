@@ -1,4 +1,5 @@
 """Regression tests for the unit and indexing fixes in the transfer rates (review step 1)."""
+from functools import partial
 from types import SimpleNamespace
 
 import numpy as np
@@ -6,16 +7,16 @@ import pytest
 
 from dmitte import para_constant
 from dmitte.calc_para import Calc_plant, Calc_soil
-from dmitte.transfer_equotions import (transfer_rates, transfer_rates_baomi, transfer_rates_Korea,
-                                       transfer_rates_morris, transfer_rates_UFORTI)
+from dmitte.transfer_equotions import transfer_rates
 
 K_NAMES = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2', 'ka2_s1', 'ks2_s1',
            'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh',
            'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
 K = {name: i for i, name in enumerate(K_NAMES)}
 
-RATE_FUNCTIONS = [transfer_rates, transfer_rates_UFORTI, transfer_rates_Korea,
-                  transfer_rates_baomi, transfer_rates_morris]
+# both soil percolation options of transfer_rates
+RATE_FUNCTIONS = [partial(transfer_rates, percolation=p) for p in ('constant', 'darcy')]
+RATE_IDS = lambda f: f.keywords['percolation']
 PLANT_TYPES = ['LEAFY_PLANT', 'CEREAL', 'ROOT_VEG']
 
 
@@ -75,7 +76,7 @@ def test_etrm_keeps_vapour_pressure_deficit_term_at_night():
     assert plant.ETRM[0] > 0.01
 
 
-@pytest.mark.parametrize('rate_fn', RATE_FUNCTIONS, ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', RATE_FUNCTIONS, ids=RATE_IDS)
 @pytest.mark.parametrize('plant_type', PLANT_TYPES)
 def test_rates_are_finite_nonnegative_and_independent_of_stability(rate_fn, plant_type):
     rates = []
@@ -90,13 +91,11 @@ def test_rates_are_finite_nonnegative_and_independent_of_stability(rate_fn, plan
     assert np.all(rates[0] >= 0)
 
 
-@pytest.mark.parametrize('rate_fn', RATE_FUNCTIONS, ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', RATE_FUNCTIONS, ids=RATE_IDS)
 @pytest.mark.parametrize('plant_type', ['CEREAL', 'ROOT_VEG'])
 def test_layer3_root_uptake_uses_layer3_water(rate_fn, plant_type):
     air, soil, plant = stub_state(plant_type, sta=4)
     k = rate_fn('HTO', plant_type, air, soil, plant)
-    if rate_fn is transfer_rates_UFORTI and plant_type == 'ROOT_VEG':
-        pytest.skip('UFOTRI ROOT_VEG uses constant rates')
     # flux out of layer 3 relative to flux out of layer 2, both per unit of plant uptake
     flux3 = (k[:, K['ks3_bh']] + k[:, K['ks3_fh']]) * soil.soil3w
     flux2 = (k[:, K['ks2_bh']] + k[:, K['ks2_fh']]) * soil.soil2w
@@ -104,24 +103,28 @@ def test_layer3_root_uptake_uses_layer3_water(rate_fn, plant_type):
         np.testing.assert_allclose(flux3, flux2)       # both layers supply 40 % of uptake
 
 
-@pytest.mark.parametrize('rate_fn', [transfer_rates, transfer_rates_Korea, transfer_rates_baomi,
-                                     transfer_rates_morris], ids=lambda f: f.__name__)
+@pytest.mark.parametrize('rate_fn', RATE_FUNCTIONS, ids=RATE_IDS)
 def test_soil_evaporation_rate_divides_by_layer1_water(rate_fn):
     air, soil, plant = stub_state('ROOT_VEG', sta=4)
     k = rate_fn('HTO', 'ROOT_VEG', air, soil, plant)
     np.testing.assert_allclose(k[:, K['ks1_a2']], soil.ESOIL / soil.soil1w * 1.1)
 
 
-def test_cereal_fruit_formation_rate_uses_crop_half_life():
+def test_fruit_rates_use_growth_based_obt_and_the_exchange_option():
     air, soil, plant = stub_state('CEREAL', sta=6)
-    k = transfer_rates_UFORTI('HTO', 'CEREAL', air, soil, plant)
-    hwz = para_constant.HWZ[para_constant.Plant_dict['CEREAL']['ICOMP'] - 1]
-    expected = np.log(2) / (hwz / 2) * (plant.friut_wh / plant.plant_wh) / 24
-    np.testing.assert_allclose(k[:, K['kbh_fo']], expected)
-    for rate_fn in (transfer_rates, transfer_rates_Korea):
-        k = rate_fn('HTO', 'CEREAL', air, soil, plant)
-        np.testing.assert_allclose(k[:, K['kbh_fo']], plant.TROBT_FRUIT)    # growth-based (calc_transOBT)
-        np.testing.assert_allclose(k[:, K['kbh_fh']], np.log(2) / 2)       # water stock constant: no growth flow
+    k = transfer_rates('HTO', 'CEREAL', air, soil, plant)
+    np.testing.assert_allclose(k[:, K['kbh_fo']], plant.TROBT_FRUIT)      # growth-based (calc_transOBT)
+    np.testing.assert_allclose(k[:, K['kbh_fh']], para_constant.KBH_FH)   # water stock constant: no growth flow
+    k = transfer_rates('HTO', 'CEREAL', air, soil, plant, kbh_fh=np.log(2) / 2)
+    np.testing.assert_allclose(k[:, K['kbh_fh']], np.log(2) / 2)
+
+
+def test_rate_options_are_checked():
+    air, soil, plant = stub_state('CEREAL', sta=4)
+    with pytest.raises(ValueError, match='percolation'):
+        transfer_rates('HTO', 'CEREAL', air, soil, plant, percolation='richards')
+    with pytest.raises(ValueError, match='plant type'):
+        transfer_rates('HTO', 'TUBER_VEG', air, soil, plant)
 
 
 @pytest.mark.parametrize('sta', range(1, 7))

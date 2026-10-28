@@ -9,8 +9,8 @@ validation/benchmarks/literature_benchmarks.csv):
 * chronic: constant air HTO from the start of the season to harvest
   (garden plot near a continuous source).
 
-The model is used as is: transfer rates come from dmitte.transfer_equotions
-(transfer_rates / transfer_rates_baomi / transfer_rates_UFORTI) and the ODE
+The model is used as is: transfer rates come from dmitte.transfer_equotions.transfer_rates
+(with its default options) and the ODE
 right-hand side is dmitte.transfer_equotions.transfer_equotions itself. Since
 the system is linear with rates constant over each hour, the hourly step is the
 matrix exponential of the generator, which is read off transfer_equotions
@@ -41,7 +41,7 @@ from dmitte import calc_para, run_wofost  # noqa: E402
 from dmitte.calc_para import Calc_air, Calc_plant, Calc_soil  # noqa: E402
 from dmitte.para_constant import ALF_HTO, COMB_WATER, LAMBDA_T_H  # noqa: E402
 from dmitte.transfer_equotions import (solve_con, transfer_equotions, transfer_rates,  # noqa: E402
-                                       transfer_rates_baomi, transfer_rates_UFORTI, water_balance_residual)
+                                       water_balance_residual)
 
 OUT = os.path.join(ROOT, 'validation', 'results')
 LAT = 51.97                   # Wageningen
@@ -51,11 +51,7 @@ EXPOSURE_HOURS = (1, 2)           # field-box experiments are 1 h, chamber exper
 # compartment order of transfer_equotions
 A_A2, A_S1, A_BH, A_BO, A_FH, A_FO = 2, 3, 6, 7, 8, 9
 
-VARIANTS = {
-    'default': transfer_rates,          # used by iaea-case1-HTO.py
-    'baomi': transfer_rates_baomi,      # used by potato_HTO.py / cereals_HTO.py
-    'UFOTRI': transfer_rates_UFORTI,    # constant UFOTRI rates (reference)
-}
+VARIANTS = {'model': transfer_rates}    # name -> rate function; add entries to compare model options
 
 CROPS = {
     'potato': dict(plant_type='ROOT_VEG', crop=('potato', 'Potato_701'), agro='potato_{y}.agro',
@@ -191,7 +187,7 @@ def water_balance_summary(k, air, soil, plant, variant):
     wb_<c>:     median of residual / k_out (signed; > 0 spurious enrichment, < 0 spurious depletion)
     wbabs_<c>:  median of |residual - dlnW/dt| / k_out (part not explained by the storage change)
     """
-    res = water_balance_residual(k, air, soil, plant, alpha=1.0 if variant == 'UFOTRI' else ALF_HTO)
+    res = water_balance_residual(k, air, soil, plant, alpha=ALF_HTO)
     out = {}
     for c, r in res.items():
         with np.errstate(divide='ignore', invalid='ignore'):

@@ -16,9 +16,10 @@ validation/
 
 本节和第 4 节是**基准 v3**（第 2.1 节）在**第三步修正后**的模型上的结果，**只含校准集**。测试集（15 条）已冻结，
 至今没有运行、没有查看（第 3 节第 6 条）。第三步共三处修正（植物水平衡、气孔昼夜变化与风速廓线、OBT 按干物质增长生成），
-每一处的单独效果见第 4.1 节。
+每一处的单独效果见第 4.1 节。之后原来的 default、baomi、Korea、morris 四个迁移率变体合并成一个 `transfer_rates`，
+UFOTRI 常数变体删除（第 5.1 节“合并”），下面的结果都是合并后的模型。
 
-| 结论 | 依据（校准集，baomi / default） |
+| 结论 | 依据（校准集） |
 |---|---|
 | 迁移率全部有限且非负；植物水和果实水的水量平衡闭合 | 负值和非有限值为 0；均匀比活度检验中植物水、果实水的未解释残差为 0（修正前 0.5–160，第 4.2 节） |
 | **马铃薯的慢性指标和 TLI 进入文献范围** | 慢性块茎 OBT/空气 0.92（0.72–1.14，B18）；块茎 TFWT/空气 1.5（0.57–1.83，B19）；叶片 OBT/TFWT 0.73–0.75（0.64–1.3，B20）；根茎代理 TLI 0.19 %（0.11–0.33 %，B13）。修正前分别为 16、6.8–12、11–12、6.6 % |
@@ -28,7 +29,7 @@ validation/
 | **暴露结束时叶片 OBT 偏低** | 白天 0.29–0.30 %（0.91–1.59 %，B22），夜间 0.05 %（0.33–0.43 %，B23）。模型没有“新鲜同化物”库（第 5.2 节 2） |
 | 白天 1 h 叶片吸收偏低 | 24–25 %（田间箱 54–92 %，B49）；田间箱用风扇通风，空气动力学阻力比模型用的站点风速小（第 5.2 节 3） |
 
-判定数从修正前的 马铃薯 1/0/10、小麦 3/2/9（✅/⚠️/❌，baomi）变为 马铃薯 6/3/2、小麦 2/6/6。
+判定数从修正前的 马铃薯 1/0/10、小麦 3/2/9（✅/⚠️/❌，原 baomi 变体）变为 马铃薯 6/3/2、小麦 2/6/6。
 接下来要处理的是夜间阻力（一个参数，可在校准集上标定）和叶片新鲜同化物库（结构改动），之后再运行一次测试集。
 
 ## 2 数据
@@ -63,8 +64,7 @@ validation/
      每次暴露记录开花后天数和所处的灌浆阶段（WOFOST 贮藏器官日增量不低于季节最大值一半的时段为线性灌浆期），
      用于对应 Diabaté & Strack (1997) 按灌浆阶段给出的 TLI。
    - *慢性*：整个生长季空气 HTO 恒定（对应 Korolevych & Kim 的连续释放菜园）。
-2. **模型原样使用**：迁移率来自 `transfer_rates`（default，`iaea-case1-HTO.py` 在用）、`transfer_rates_baomi`
-   （`potato_HTO.py`、`cereals_HTO.py` 在用）、`transfer_rates_UFORTI`（UFOTRI 常数）；ODE 右端就是
+2. **模型原样使用**：迁移率来自 `transfer_rates`（默认选项，仓库中所有算例脚本都调用它）；ODE 右端就是
    `transfer_equotions()` 本身。系统对 y 线性、迁移率逐小时分段常数，所以每小时的传播子 = 生成矩阵的矩阵指数，
    生成矩阵从 `transfer_equotions()` 逐列取出（`solve_con()` 现在也用同样的方法，两者结果一致，见 `diagnostics.csv`）。
    唯一的改动是实验施加的边界条件：空气库室在暴露小时内固定为暴露浓度，其余时间为 0（洁净空气）。
@@ -90,52 +90,46 @@ validation/
 完整表见 `results/benchmark_comparison.csv`（含 5–95 % 分位）。下表为校准集各项的模型中位数与判定（第三步修正后）。
 “匹配”列：本作物 = 同一作物的实验；代理 = 其他作物（马铃薯用萝卜、小麦用水稻）；通用 = 多作物汇总值。
 
-| 基准 | 作物 | 文献指标 | 实验作物与类型 | 匹配 | UFOTRI | baomi | default | 文献 |
-|---|---|---|---|---|---|---|---|---|
-| B1 | 马铃薯 | leaf TFWT at end of 1 h exposure / mean air-moisture HTO | radish；field box | 代理 | 6.2 ❌ | 11 ❌ | 11 ❌ | 22–46 % |
-| B10 | 马铃薯 | TFWT decrease factor from end of exposure to harvest | radish root；field box | 代理 | 73 ✅ | 12 ✅ | 26 ✅ | 0–1.3×10⁴ - |
-| B13 | 马铃薯 | TLI = OBT in root at harvest / leaf TFWT at end of exposure | radish；field box | 代理 | 0.64 ⚠️ | 0.19 ✅ | 0.19 ✅ | 0.11–0.33 % |
-| B56 | 马铃薯 | leaf TFWT fast loss rate constant k1 after daytime exposure | potato；greenhouse | 本作物 | 0.35 ⚠️ | 0.58 ✅ | 0.58 ✅ | 0.5–1.1 h-1 |
-| B57 | 马铃薯 | leaf TFWT fast loss rate constant k1 after night exposure | potato；greenhouse | 本作物 | 0.35 ✅ | 0.079 ❌ | 0.079 ❌ | 0.19–0.42 h-1 |
-| B58 | 马铃薯 | leaf HTO uptake rate constant (day) | potato；greenhouse | 本作物 | 0.35 ❌ | 0.58 ⚠️ | 0.58 ⚠️ | 0.93–2.1 h-1 |
-| B6 | 马铃薯 | day/night ratio of leaf HTO uptake rate | most crops (not young lettuce)；review | 通用 | 1 ❌ | 7.5 ⚠️ | 7.5 ⚠️ | 3–5 - |
-| B15 | 马铃薯 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 1 ⚠️ | 0.97 ⚠️ | 1 ❌ | 0.1–0.5 - |
-| B18 | 马铃薯 | fruit/tuber OBT (Bq/L comb. water) / air HTO (Bq/L) averaged at pod filling | tomato, pepper, potato (pooled)；field | 本作物 | 1.1 ✅ | 0.92 ✅ | 0.93 ✅ | 0.72–1.1 - |
-| B19 | 马铃薯 | fruit/tuber HTO / air HTO averaged 3 d before harvest | tomato, pepper, potato (pooled)；field | 本作物 | 0.18 ❌ | 1.5 ✅ | 1.5 ✅ | 0.57–1.8 - |
-| B20 | 马铃薯 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.028 ❌ | 0.75 ✅ | 0.73 ✅ | 0.64–1.3 - |
-| B4 | 小麦 | night/day ratio of leaf HTO uptake | wheat；field box | 本作物 | 1 ❌ | 0.2 ✅ | 0.2 ✅ | 0.17–0.38 - |
-| B49 | 小麦 | leaf TFWT / air-moisture HTO at end of 1 h exposure (day) | wheat；field box | 本作物 | 5 ❌ | 25 ❌ | 24 ❌ | 54–92 % |
-| B50 | 小麦 | leaf TFWT / air-moisture HTO at end of 1 h exposure (night) | wheat；field box | 本作物 | 5 ❌ | 5.1 ❌ | 4.9 ❌ | 17–19 % |
-| B5 | 小麦 | leaf TFWT loss rate constant within 1 h after daytime exposure | wheat；field box | 本作物 | 0.35 ❌ | 0.5 ⚠️ | 0.5 ⚠️ | 0.85–1.7 h-1 |
-| B29 | 小麦 | leaf TFWT loss rate constant within 1 h after night exposure | wheat；field box | 本作物 | 0.35 ✅ | 0.054 ❌ | 0.054 ❌ | 0.24–0.38 h-1 |
-| B59 | 小麦 | leaf TFWT fast loss rate constant k1 after daytime exposure | wheat；greenhouse | 本作物 | 0.35 ⚠️ | 0.5 ⚠️ | 0.5 ⚠️ | 0.55–1.2 h-1 |
-| B60 | 小麦 | leaf TFWT fast loss rate constant k1 after night exposure | wheat；greenhouse | 本作物 | 0.35 ⚠️ | 0.054 ⚠️ | 0.054 ⚠️ | 0.1–0.22 h-1 |
-| B6 | 小麦 | day/night ratio of leaf HTO uptake rate | most crops (not young lettuce)；review | 通用 | 1 ❌ | 8.7 ⚠️ | 8.7 ⚠️ | 3–5 - |
-| B22 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (day) | wheat；field box | 本作物 | 0.28 ❌ | 0.29 ❌ | 0.3 ❌ | 0.91–1.6 % |
-| B23 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (night) | wheat；field box | 本作物 | 0.052 ❌ | 0.05 ❌ | 0.05 ❌ | 0.33–0.43 % |
-| B15 | 小麦 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 0.33 ✅ | 1.2 ❌ | 1.2 ❌ | 0.1–0.5 - |
-| B26 | 小麦 | TLI grain (OBT at harvest / leaf TFWT at end of 1 h exposure) | wheat；field box | 本作物 | 0.78 ❌ | 0.37 ⚠️ | 0.39 ⚠️ | 0.18–0.32 % |
-| B9 | 小麦 | TFWT decrease factor from end of exposure to harvest | rice；field box | 代理 | 27 ❌ | 1 378 ✅ | 1 189 ✅ | 600–9.5×10⁴ - |
-| B20 | 小麦 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.16 ❌ | 0.58 ⚠️ | 0.65 ✅ | 0.64–1.3 - |
+| 基准 | 作物 | 文献指标 | 实验作物与类型 | 匹配 | 模型 | 文献 |
+|---|---|---|---|---|---|---|
+| B1 | 马铃薯 | leaf TFWT at end of 1 h exposure / mean air-moisture HTO | radish；field box | 代理 | 11 ❌ | 22–46 % |
+| B10 | 马铃薯 | TFWT decrease factor from end of exposure to harvest | radish root；field box | 代理 | 12 ✅ | 0–1.3×10⁴ - |
+| B13 | 马铃薯 | TLI = OBT in root at harvest / leaf TFWT at end of exposure | radish；field box | 代理 | 0.19 ✅ | 0.11–0.33 % |
+| B56 | 马铃薯 | leaf TFWT fast loss rate constant k1 after daytime exposure | potato；greenhouse | 本作物 | 0.58 ✅ | 0.5–1.1 h-1 |
+| B57 | 马铃薯 | leaf TFWT fast loss rate constant k1 after night exposure | potato；greenhouse | 本作物 | 0.079 ❌ | 0.19–0.42 h-1 |
+| B58 | 马铃薯 | leaf HTO uptake rate constant (day) | potato；greenhouse | 本作物 | 0.58 ⚠️ | 0.93–2.1 h-1 |
+| B6 | 马铃薯 | day/night ratio of leaf HTO uptake rate | most crops (not young lettuce)；review | 通用 | 7.5 ⚠️ | 3–5 - |
+| B15 | 马铃薯 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 0.97 ⚠️ | 0.1–0.5 - |
+| B18 | 马铃薯 | fruit/tuber OBT (Bq/L comb. water) / air HTO (Bq/L) averaged at pod filling | tomato, pepper, potato (pooled)；field | 本作物 | 0.92 ✅ | 0.72–1.1 - |
+| B19 | 马铃薯 | fruit/tuber HTO / air HTO averaged 3 d before harvest | tomato, pepper, potato (pooled)；field | 本作物 | 1.5 ✅ | 0.57–1.8 - |
+| B20 | 马铃薯 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.75 ✅ | 0.64–1.3 - |
+| B4 | 小麦 | night/day ratio of leaf HTO uptake | wheat；field box | 本作物 | 0.2 ✅ | 0.17–0.38 - |
+| B49 | 小麦 | leaf TFWT / air-moisture HTO at end of 1 h exposure (day) | wheat；field box | 本作物 | 25 ❌ | 54–92 % |
+| B50 | 小麦 | leaf TFWT / air-moisture HTO at end of 1 h exposure (night) | wheat；field box | 本作物 | 5.1 ❌ | 17–19 % |
+| B5 | 小麦 | leaf TFWT loss rate constant within 1 h after daytime exposure | wheat；field box | 本作物 | 0.5 ⚠️ | 0.85–1.7 h-1 |
+| B29 | 小麦 | leaf TFWT loss rate constant within 1 h after night exposure | wheat；field box | 本作物 | 0.054 ❌ | 0.24–0.38 h-1 |
+| B59 | 小麦 | leaf TFWT fast loss rate constant k1 after daytime exposure | wheat；greenhouse | 本作物 | 0.5 ⚠️ | 0.55–1.2 h-1 |
+| B60 | 小麦 | leaf TFWT fast loss rate constant k1 after night exposure | wheat；greenhouse | 本作物 | 0.054 ⚠️ | 0.1–0.22 h-1 |
+| B6 | 小麦 | day/night ratio of leaf HTO uptake rate | most crops (not young lettuce)；review | 通用 | 8.7 ⚠️ | 3–5 - |
+| B22 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (day) | wheat；field box | 本作物 | 0.29 ❌ | 0.91–1.6 % |
+| B23 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (night) | wheat；field box | 本作物 | 0.05 ❌ | 0.33–0.43 % |
+| B15 | 小麦 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 1.2 ❌ | 0.1–0.5 - |
+| B26 | 小麦 | TLI grain (OBT at harvest / leaf TFWT at end of 1 h exposure) | wheat；field box | 本作物 | 0.37 ⚠️ | 0.18–0.32 % |
+| B9 | 小麦 | TFWT decrease factor from end of exposure to harvest | rice；field box | 代理 | 1 378 ✅ | 600–9.5×10⁴ - |
+| B20 | 小麦 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.58 ⚠️ | 0.64–1.3 - |
 
-判定数（校准集）：
-
-| | ✅ 符合 | ⚠️ 接近 | ❌ 偏离 |
-|---|---|---|---|
-| 马铃薯 UFOTRI / baomi / default | 3 / 6 / 6 | 3 / 3 / 2 | 5 / 2 / 3 |
-| 小麦 UFOTRI / baomi / default | 2 / 2 / 3 | 2 / 6 / 5 | 10 / 6 / 6 |
+判定数（校准集，✅ 符合 / ⚠️ 接近 / ❌ 偏离）：马铃薯 6 / 3 / 2，小麦 2 / 6 / 6。
 
 读表时注意：
 - 温室（B56–B60）和舱室实验强制通风，叶–气速率比田间偏高；田间箱实验箱内温度在暴露期间升高约 10 °C（TECDOC-1738 §7.9）。
-- UFOTRI 的叶–气交换是常数 0.35 h⁻¹，昼夜相同，它在夜间指标上“符合”只是巧合。UFOTRI 的迁移率本身没有改，
-  但它的浓度换算用到 `plant_w`（现在是活叶片水），CEREAL 的 `kbh_bo` 用到 `TROBT`，所以 UFOTRI 的结果也有变化。
 - B15 的模型指标是暴露后 24 h 内生成的 OBT（夜间暴露 / 白天暴露，按暴露结束时叶片 HTO 归一化），会把夜间叶片
   HTO 保留到天亮后的光合生成也算进去；夜间交换偏慢时它偏高（第 5.2 节 1）。
 - 玉米（B7、B8、B64）是 C4 作物，不用于判定马铃薯和小麦，只作 C4 参照保留在基准表中。
 
 ### 4.1 三处修正的逐步效果
 
-每一步都在前一步基础上累加，校准集判定数（✅ / ⚠️ / ❌）：
+每一步都在前一步基础上累加，校准集判定数（✅ / ⚠️ / ❌）。当时代码中还有 baomi 和 default 两个变体；
+合并后的模型取 baomi 的两个选项（第 5.1 节“合并”），结果与第 ③ 行的 baomi 列逐项相同：
 
 | 步骤 | 马铃薯 baomi | 马铃薯 default | 小麦 baomi | 小麦 default |
 |---|---|---|---|---|
@@ -160,17 +154,15 @@ validation/
 水量闭合时它等于水量的相对变化 dlnW/dt；下表为两者之差相对该库室流出速率 k_out 的逐时中位数
 （`diagnostics.csv` 中的 `wbabs_*`，越接近 0 越好）：
 
-| 作物 | 变体 | 土壤 1 | 土壤 2 | 土壤 3 | 植物水 | 果实水 |
-|---|---|---|---|---|---|---|
-| 马铃薯 | UFOTRI | 0.22 | 0.13 | 0.34 | 0.43 | 0.74 |
-|  | baomi | 0.66（修正前 0.50） | 0.75（0.47） | 0.94（0.55） | **0**（0.47） | **0**（21） |
-|  | default | 0.90（0.87） | 0.48（0.44） | 5.6（2.0） | **0**（0.75） | **0**（14） |
-| 小麦 | UFOTRI | 0.26 | 0.22 | 0.54 | 0.47 | 0 |
-|  | baomi | 0.62（0.55） | 0.64（0.31） | 0.57（0.47） | **0**（0.90） | **0**（160） |
-|  | default | 0.95（0.97） | 0.43（0.42） | 46（23） | **0**（0.66） | 0（0） |
+| 作物 | 土壤 1 | 土壤 2 | 土壤 3 | 植物水 | 果实水 |
+|---|---|---|---|---|---|
+| 马铃薯 | 0.66（修正前 0.50） | 0.75（0.47） | 0.94（0.55） | **0**（0.47） | **0**（21） |
+| 小麦 | 0.62（0.55） | 0.64（0.31） | 0.57（0.47） | **0**（0.90） | **0**（160） |
+
+括号内为第三步修正前 baomi 变体的值。土壤下渗改用达西式（`percolation='darcy'`）时，土壤第 3 层为 5.6（马铃薯）和 46（小麦）。
 
 植物水和果实水现在按构造闭合（`plant_water_routes()`，测试 `test_plant_and_fruit_water_balance_closes`）。
-土壤三层仍不闭合，default 第 3 层的大值来自达西式（第 5.2 节 4）。
+土壤三层仍不闭合（第 5.2 节 4）。
 
 ![叶片吸收](results/figures/fig1_leaf_uptake.png)
 ![交换速率](results/figures/fig2_exchange_rate.png)
@@ -180,6 +172,9 @@ validation/
 ## 5 发现的问题
 
 ### 5.1 已修正
+
+第一至第三步修正时代码中还有多个迁移率变体（default、baomi、Korea、morris、UFOTRI），下面各表的“影响的函数”指当时的变体；
+它们现在已合并（本节最后）。
 
 **第一步**（单位与索引；回归测试 `tests/test_rate_fixes.py`）：
 
@@ -225,7 +220,27 @@ default、Korea、baomi、morris 四个变体都改；UFOTRI 的常数不变。
 新增参数（`para_constant.py`）：`DMF_LEAF = 0.2`、`ID_OBT = 0.8`、`COMB_WATER = 0.556`、`KBO_BH`（原各变体中的 10 d 半衰期）、
 `OBT_DARK = 0.3`。前四个来自文献，没有用基准调过。`OBT_DARK` 的文献范围是 0.1–0.5
 （Moses & Calvin：1/3；Thompson & Nelson：0.1；小麦叶片约 0.5，TECDOC-1738 §7.1–7.2），取的是校准基准 B15 的中值。
-`ETRM` 现在只用于 default ROOT_VEG 的 `kbh_fh`，`dmitte_morris.py` 对它的扰动基本不再影响结果。
+`ETRM` 不再进入任何迁移率，`dmitte_morris.py` 对它的扰动不影响结果。
+
+**合并迁移率变体**（本次提交）。第三步之后，default 和 baomi 只剩两处不同，原来 baomi 特有的 `kbh_a2 × 100`
+和果实水下限都已作为错误去掉。四个变体合并成一个 `transfer_rates`，两处不同改为参数：
+
+| 参数 | 选项 | 默认值与依据 |
+|---|---|---|
+| `percolation` | `'constant'`：第 1→2 层 0.181×9/24、第 2→3 层 0.072×9/24 kg m⁻² h⁻¹（原 baomi）；`'darcy'`：`calc_soil_ab` 的达西通量（原 default） | `'constant'`（`para_constant.PERCOLATION`）。两种选项的校准判定完全相同，但达西式量纲不自洽（review #7），使土壤第 3 层的水量检验残差达 5.6–46（常数下渗为 0.57–0.94） |
+| `kbh_fh` | 植物水 → 果实水的交换速率（不含生长所需的净液流） | ln2/80 ≈ 0.0087 h⁻¹（`para_constant.KBH_FH`，原 baomi）。与原 default 小麦的 ln2/2 相比，校准判定只有小麦 B20 不同（0.58 ⚠️ 对 0.65 ✅），基准不足以区分，留给敏感性分析 |
+
+其他改动：
+- 删除 `transfer_rates_UFORTI`。有了文献基准，模型对错由数据判断；这个函数也不是完整的 UFOTRI（小麦的 OBT 生成、叶菜和小麦的根系吸水
+  用的是本模型的公式）。“动态 vs 常数迁移率”的对比应该用本模型冻结时间变化后的版本，在做那组实验时再设计；
+  EMRAS 多模型比较用文献发表的 UFOTRI 结果，不需要这个函数。
+- 删除没有调用者的 Korea、morris 变体和不在 `Plant_dict` 中的 TUBER_VEG 分支（`Calc_air` 无法构建这种作物，是死代码）。
+- 叶菜（LEAFY_PLANT）的叶片 OBT 生成原来为 0，现在与其他作物一样用 `TROBT`。
+- `potato_HTO.py`、`cereals_HTO.py`、`tomatoes_HTO.py`、`dmitte_morris.py`、`pcse_morris.py` 改调 `transfer_rates`；
+  前三个脚本中与 UFOTRI 逐项对比迁移率的作图删除。`tomatoes_HTO.py`、`iaea-case1-HTO.py` 原来用 default，结果会随默认选项变化。
+- `pcse_morris.py` 原来复制了一份约 540 行的旧 `calc_para.py`（含第一至三步修正前的全部问题），只为把气象换成 Morris 样本值；
+  现在直接用 `dmitte.calc_para` 的类，只替换 `meteodata`。它以前的 Morris 结果来自修正前的模型。
+- 合并后的模型在校准集上与第三步后的 baomi 结果逐项相同（25 项比较，最大相对差 0）。
 
 ### 5.2 仍未解决（按影响排序）
 

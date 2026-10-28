@@ -1,86 +1,32 @@
 test split: 15 benchmarks, 4 datasets, fingerprint 067765dc47f5 (unchanged)
 ==== calibration benchmarks
 benchmark   crop   match variant                     metric       bench                   model    verdict  factor_off
-       B1 potato   proxy  UFOTRI                    R0_leaf       22–46        6.18 [3.51–15.1]        off    3.557809
-       B1 potato   proxy   baomi                    R0_leaf       22–46        10.6 [5.49–45.1]        off    2.070163
-       B1 potato   proxy default                    R0_leaf       22–46        10.7 [5.51–44.4]        off    2.062801
-      B10 potato   proxy  UFOTRI           tfwt_drop_edible   0–1.3e+04    72.5 [2.97–1.04e+05] consistent    1.000000
-      B10 potato   proxy   baomi           tfwt_drop_edible   0–1.3e+04       11.6 [1–1.58e+03] consistent    1.000000
-      B10 potato   proxy default           tfwt_drop_edible   0–1.3e+04       26.1 [1–3.69e+03] consistent    1.000000
-      B13 potato   proxy  UFOTRI                 TLI_edible   0.11–0.33      0.644 [0.134–1.42]      close    1.951676
-      B13 potato   proxy   baomi                 TLI_edible   0.11–0.33   0.188 [0.00877–0.856] consistent    1.000000
-      B13 potato   proxy default                 TLI_edible   0.11–0.33    0.193 [0.00704–0.88] consistent    1.000000
-      B56 potato    crop  UFOTRI                 k_exchange    0.5–1.12     0.346 [0.346–0.346]      close    1.445783
-      B56 potato    crop   baomi                 k_exchange    0.5–1.12      0.581 [0.252–1.03] consistent    1.000000
-      B56 potato    crop default                 k_exchange    0.5–1.12      0.581 [0.252–1.03] consistent    1.000000
-      B57 potato    crop  UFOTRI                 k_exchange  0.187–0.42     0.346 [0.346–0.346] consistent    1.000000
-      B57 potato    crop   baomi                 k_exchange  0.187–0.42   0.0794 [0.0496–0.122]        off    2.352421
-      B57 potato    crop default                 k_exchange  0.187–0.42   0.0794 [0.0496–0.122]        off    2.352421
-      B58 potato    crop  UFOTRI                 k_exchange   0.933–2.1     0.346 [0.346–0.346]        off    2.698795
-      B58 potato    crop   baomi                 k_exchange   0.933–2.1      0.581 [0.252–1.03]      close    1.607585
-      B58 potato    crop default                 k_exchange   0.933–2.1      0.581 [0.252–1.03]      close    1.607585
-       B6 potato general  UFOTRI           k_day_over_night         3–5                 1 [1–1]        off    3.000000
-       B6 potato general   baomi           k_day_over_night         3–5        7.48 [2.23–12.4]      close    1.495282
-       B6 potato general default           k_day_over_night         3–5        7.48 [2.23–12.4]      close    1.495282
-      B15 potato general  UFOTRI         obt_night_over_day     0.1–0.5                 1 [1–1]      close    2.000000
-      B15 potato general   baomi         obt_night_over_day     0.1–0.5      0.974 [0.642–1.53]      close    1.947215
-      B15 potato general default         obt_night_over_day     0.1–0.5       1.03 [0.666–1.53]        off    2.061445
-      B18 potato    crop  UFOTRI       chronic_OBT_over_air   0.72–1.14       1.11 [0.945–1.81] consistent    1.000000
-      B18 potato    crop   baomi       chronic_OBT_over_air   0.72–1.14      0.915 [0.914–1.02] consistent    1.000000
-      B18 potato    crop default       chronic_OBT_over_air   0.72–1.14      0.932 [0.906–1.04] consistent    1.000000
-      B19 potato    crop  UFOTRI      chronic_TFWT_over_air   0.57–1.83     0.178 [0.137–0.297]        off    3.207976
-      B19 potato    crop   baomi      chronic_TFWT_over_air   0.57–1.83         1.5 [1.33–1.66] consistent    1.000000
-      B19 potato    crop default      chronic_TFWT_over_air   0.57–1.83        1.49 [1.28–1.84] consistent    1.000000
-      B20 potato general  UFOTRI chronic_leaf_OBT_over_TFWT    0.64–1.3   0.0275 [0.00637–0.03]        off   23.241431
-      B20 potato general   baomi chronic_leaf_OBT_over_TFWT    0.64–1.3     0.748 [0.626–0.764] consistent    1.000000
-      B20 potato general default chronic_leaf_OBT_over_TFWT    0.64–1.3     0.731 [0.621–0.733] consistent    1.000000
-       B4  wheat    crop  UFOTRI          R0_night_over_day 0.167–0.375       1.01 [0.882–1.04]        off    2.683579
-       B4  wheat    crop   baomi          R0_night_over_day 0.167–0.375     0.198 [0.144–0.262] consistent    1.000000
-       B4  wheat    crop default          R0_night_over_day 0.167–0.375     0.197 [0.142–0.261] consistent    1.000000
-      B49  wheat    crop  UFOTRI                    R0_leaf       54–92        4.96 [2.54–30.9]        off   10.887338
-      B49  wheat    crop   baomi                    R0_leaf       54–92        25.3 [16.5–40.3]        off    2.137992
-      B49  wheat    crop default                    R0_leaf       54–92        24.1 [16.5–38.3]        off    2.240735
-      B50  wheat    crop  UFOTRI                    R0_leaf       17–19        5.04 [2.39–31.1]        off    3.370829
-      B50  wheat    crop   baomi                    R0_leaf       17–19        5.11 [3.68–7.35]        off    3.325580
-      B50  wheat    crop default                    R0_leaf       17–19         4.93 [3.68–6.8]        off    3.451764
-       B5  wheat    crop  UFOTRI                 k_exchange   0.85–1.66     0.346 [0.346–0.346]        off    2.457831
-       B5  wheat    crop   baomi                 k_exchange   0.85–1.66      0.504 [0.27–0.856]      close    1.686555
-       B5  wheat    crop default                 k_exchange   0.85–1.66      0.504 [0.27–0.856]      close    1.686555
-      B29  wheat    crop  UFOTRI                 k_exchange   0.24–0.38     0.346 [0.346–0.346] consistent    1.000000
-      B29  wheat    crop   baomi                 k_exchange   0.24–0.38   0.054 [0.0358–0.0771]        off    4.444266
-      B29  wheat    crop default                 k_exchange   0.24–0.38   0.054 [0.0358–0.0771]        off    4.444266
-      B59  wheat    crop  UFOTRI                 k_exchange  0.553–1.24     0.346 [0.346–0.346]      close    1.600000
-      B59  wheat    crop   baomi                 k_exchange  0.553–1.24      0.504 [0.27–0.856]      close    1.097914
-      B59  wheat    crop default                 k_exchange  0.553–1.24      0.504 [0.27–0.856]      close    1.097914
-      B60  wheat    crop  UFOTRI                 k_exchange   0.1–0.225     0.346 [0.346–0.346]      close    1.537037
-      B60  wheat    crop   baomi                 k_exchange   0.1–0.225   0.054 [0.0358–0.0771]      close    1.851777
-      B60  wheat    crop default                 k_exchange   0.1–0.225   0.054 [0.0358–0.0771]      close    1.851777
-       B6  wheat general  UFOTRI           k_day_over_night         3–5                 1 [1–1]        off    3.000000
-       B6  wheat general   baomi           k_day_over_night         3–5        8.74 [6.49–14.4]      close    1.748765
-       B6  wheat general default           k_day_over_night         3–5        8.74 [6.49–14.4]      close    1.748765
-      B22  wheat    crop  UFOTRI          obt_end_over_leaf   0.91–1.59     0.283 [0.255–0.718]        off    3.212665
-      B22  wheat    crop   baomi          obt_end_over_leaf   0.91–1.59     0.291 [0.256–0.771]        off    3.128862
-      B22  wheat    crop default          obt_end_over_leaf   0.91–1.59     0.296 [0.256–0.771]        off    3.075859
-      B23  wheat    crop  UFOTRI          obt_end_over_leaf   0.33–0.43   0.0524 [0.0478–0.131]        off    6.293041
-      B23  wheat    crop   baomi          obt_end_over_leaf   0.33–0.43   0.0497 [0.0455–0.125]        off    6.638367
-      B23  wheat    crop default          obt_end_over_leaf   0.33–0.43   0.0501 [0.0458–0.125]        off    6.592953
-      B15  wheat general  UFOTRI         obt_night_over_day     0.1–0.5     0.335 [0.266–0.469] consistent    1.000000
-      B15  wheat general   baomi         obt_night_over_day     0.1–0.5       1.18 [0.704–1.62]        off    2.357372
-      B15  wheat general default         obt_night_over_day     0.1–0.5       1.17 [0.701–1.65]        off    2.333371
-      B26  wheat    crop  UFOTRI                 TLI_edible   0.18–0.32      0.78 [0.246–0.987]        off    2.436196
-      B26  wheat    crop   baomi                 TLI_edible   0.18–0.32     0.372 [0.136–0.863]      close    1.161248
-      B26  wheat    crop default                 TLI_edible   0.18–0.32      0.39 [0.137–0.936]      close    1.217731
-       B9  wheat   proxy  UFOTRI             tfwt_drop_leaf 600–9.5e+04         26.9 [11.7–318]        off   22.295167
-       B9  wheat   proxy   baomi             tfwt_drop_leaf 600–9.5e+04 1.38e+03 [233–3.26e+04] consistent    1.000000
-       B9  wheat   proxy default             tfwt_drop_leaf 600–9.5e+04 1.19e+03 [189–2.24e+04] consistent    1.000000
-      B20  wheat general  UFOTRI chronic_leaf_OBT_over_TFWT    0.64–1.3     0.158 [0.158–0.158]        off    4.048220
-      B20  wheat general   baomi chronic_leaf_OBT_over_TFWT    0.64–1.3        0.58 [0.58–0.58]      close    1.104060
-      B20  wheat general default chronic_leaf_OBT_over_TFWT    0.64–1.3     0.646 [0.646–0.646] consistent    1.000000
+       B1 potato   proxy   model                    R0_leaf       22–46        10.6 [5.49–45.1]        off    2.070163
+      B10 potato   proxy   model           tfwt_drop_edible   0–1.3e+04       11.6 [1–1.58e+03] consistent    1.000000
+      B13 potato   proxy   model                 TLI_edible   0.11–0.33   0.188 [0.00877–0.856] consistent    1.000000
+      B56 potato    crop   model                 k_exchange    0.5–1.12      0.581 [0.252–1.03] consistent    1.000000
+      B57 potato    crop   model                 k_exchange  0.187–0.42   0.0794 [0.0496–0.122]        off    2.352421
+      B58 potato    crop   model                 k_exchange   0.933–2.1      0.581 [0.252–1.03]      close    1.607585
+       B6 potato general   model           k_day_over_night         3–5        7.48 [2.23–12.4]      close    1.495282
+      B15 potato general   model         obt_night_over_day     0.1–0.5      0.974 [0.642–1.53]      close    1.947215
+      B18 potato    crop   model       chronic_OBT_over_air   0.72–1.14      0.915 [0.914–1.02] consistent    1.000000
+      B19 potato    crop   model      chronic_TFWT_over_air   0.57–1.83         1.5 [1.33–1.66] consistent    1.000000
+      B20 potato general   model chronic_leaf_OBT_over_TFWT    0.64–1.3     0.748 [0.626–0.764] consistent    1.000000
+       B4  wheat    crop   model          R0_night_over_day 0.167–0.375     0.198 [0.144–0.262] consistent    1.000000
+      B49  wheat    crop   model                    R0_leaf       54–92        25.3 [16.5–40.3]        off    2.137992
+      B50  wheat    crop   model                    R0_leaf       17–19        5.11 [3.68–7.35]        off    3.325580
+       B5  wheat    crop   model                 k_exchange   0.85–1.66      0.504 [0.27–0.856]      close    1.686555
+      B29  wheat    crop   model                 k_exchange   0.24–0.38   0.054 [0.0358–0.0771]        off    4.444266
+      B59  wheat    crop   model                 k_exchange  0.553–1.24      0.504 [0.27–0.856]      close    1.097914
+      B60  wheat    crop   model                 k_exchange   0.1–0.225   0.054 [0.0358–0.0771]      close    1.851777
+       B6  wheat general   model           k_day_over_night         3–5        8.74 [6.49–14.4]      close    1.748765
+      B22  wheat    crop   model          obt_end_over_leaf   0.91–1.59     0.291 [0.256–0.771]        off    3.128862
+      B23  wheat    crop   model          obt_end_over_leaf   0.33–0.43   0.0497 [0.0455–0.125]        off    6.638367
+      B15  wheat general   model         obt_night_over_day     0.1–0.5       1.18 [0.704–1.62]        off    2.357372
+      B26  wheat    crop   model                 TLI_edible   0.18–0.32     0.372 [0.136–0.863]      close    1.161248
+       B9  wheat   proxy   model             tfwt_drop_leaf 600–9.5e+04 1.38e+03 [233–3.26e+04] consistent    1.000000
+      B20  wheat general   model chronic_leaf_OBT_over_TFWT    0.64–1.3        0.58 [0.58–0.58]      close    1.104060
 verdict         close  consistent  off
 crop   variant                        
-potato UFOTRI       3           3    5
-       baomi        3           6    2
-       default      2           6    3
-wheat  UFOTRI       2           2   10
-       baomi        6           2    6
-       default      5           3    6
+potato model        3           6    2
+wheat  model        6           2    6

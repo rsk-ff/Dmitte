@@ -40,8 +40,8 @@ RES = os.path.join(HERE, 'results')
 FIG = os.path.join(RES, 'figures')
 BENCH_DIR = os.path.join(HERE, 'benchmarks')
 
-VARIANT_ORDER = ['UFOTRI', 'baomi', 'default']
-COLORS = {'UFOTRI': '#2a78d6', 'baomi': '#eb6834', 'default': '#1baf7a'}
+VARIANT_ORDER = ['model']                 # variant names written by run_validation.py
+COLORS = {'model': '#2a78d6'}
 BAND = '#c9c8c2'
 INK, INK2 = '#0b0b0b', '#52514e'
 
