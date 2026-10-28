@@ -74,3 +74,20 @@ def test_wofost_conf_outputs_what_calc_plant_reads():
         exec(compile(f.read(), run_wofost.WOFOST_CONF, 'exec'), conf)
     assert {'PGASS', 'PMRES', 'LAI', 'TAGP', 'TWSO', 'TWLV', 'SM', 'WWLOW'} <= set(conf['OUTPUT_VARS'])
     assert run_wofost.WOFOST72_CROP_REPO.endswith('/wofost72/')
+
+
+def test_benchmark_test_split_is_frozen():
+    # The test benchmarks are evaluated once after model development; editing them changes the fingerprint
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'validation'))
+    import pandas as pd
+    import analyze
+    bench = pd.read_csv(os.path.join(analyze.BENCH_DIR, 'literature_benchmarks.csv')).set_index('id')
+    bench['id'] = bench.index
+    test_ids, test_files = analyze.load_split()
+    assert len(test_ids) == 15 and len(test_files) == 4
+    assert analyze.test_fingerprint(bench, test_ids, test_files) == analyze.FROZEN_TEST_FINGERPRINT
+    # every check refers to an existing benchmark, and no test benchmark is missing a split entry
+    assert {c['benchmark'] for c in analyze.CHECKS} <= set(bench.index)
+    split = pd.read_csv(os.path.join(analyze.BENCH_DIR, 'split.csv'))
+    assert set(split.id[~split.id.str.startswith('datasets/')]) == set(bench.index)

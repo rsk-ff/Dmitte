@@ -80,7 +80,7 @@ def main():
         for name, k in variants(soil, plant, base).items():
             P = propagators(k)
             chronic = rv.chronic_metrics(rv.run_clamped(P, pools['w_air'], 0, len(P)), pools)
-            acute = rv.acute_metrics(rv.run_clamped(P, pools['w_air'], i0, i0 + 1), i0, pools, k)
+            acute = rv.acute_metrics(rv.run_clamped(P, pools['w_air'], i0, i0 + 1), i0, i0 + 1, pools, k)
             rows.append(dict(year=year, variant=name, chronic_OBT_over_air=chronic['chronic_OBT_over_air'],
                              chronic_TFWT_over_air=chronic['chronic_TFWT_over_air'],
                              chronic_leaf_TFWT_over_air=chronic['chronic_leaf_TFWT_over_air'],

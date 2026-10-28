@@ -1,0 +1,70 @@
+id,split,group,reason
+B1,calibration,,
+B1b,calibration,,
+B2,calibration,,
+B3,calibration,,
+B4,calibration,,
+B5,calibration,,
+B6,calibration,,
+B7,calibration,,
+B8,calibration,,
+B9,calibration,,
+B10,calibration,,
+B11,calibration,,
+B12,test,potato and bean chamber FZK (TECDOC-1738 Table 24),"only tritium experiment on potato; B24 and B25 never compared, B12 was shown in v1-v2 validation reports (known leak)"
+B13,calibration,,
+B14,calibration,,
+B15,calibration,,
+B16,calibration,,
+B17,calibration,,
+B18,calibration,,
+B19,calibration,,
+B20,calibration,,
+B21,calibration,,
+B22,calibration,,
+B23,calibration,,
+B24,test,potato and bean chamber FZK (TECDOC-1738 Table 24),"only tritium experiment on potato; B24 and B25 never compared, B12 was shown in v1-v2 validation reports (known leak)"
+B25,test,potato and bean chamber FZK (TECDOC-1738 Table 24),"only tritium experiment on potato; B24 and B25 never compared, B12 was shown in v1-v2 validation reports (known leak)"
+B26,calibration,,
+B27,calibration,,
+B28,calibration,,
+B29,calibration,,
+B30,calibration,,
+B31,calibration,,
+B32,calibration,,
+B33,calibration,,
+B34,test,Pickering chronic (EMRAS TC14 Table 3.7),"never compared with the model; chronic counterpart to the Chalk River garden ratios (B18, B19) kept for calibration"
+B35,test,Pickering chronic (EMRAS TC14 Table 3.7),"never compared with the model; chronic counterpart to the Chalk River garden ratios (B18, B19) kept for calibration"
+B36,test,Pickering chronic (EMRAS TC14 Table 3.7),"never compared with the model; chronic counterpart to the Chalk River garden ratios (B18, B19) kept for calibration"
+B37,test,Pickering chronic (EMRAS TC14 Table 3.7),"never compared with the model; chronic counterpart to the Chalk River garden ratios (B18, B19) kept for calibration"
+B38,calibration,,
+B39,calibration,,
+B40,calibration,,
+B41,calibration,,
+B42,calibration,,
+B43,calibration,,
+B44,calibration,,
+B45,calibration,,
+B46,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B47,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B48,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B49,calibration,,
+B50,calibration,,
+B51,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B52,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B53,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B54,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B55,test,wheat chamber FZK 1993 (Diabate & Strack 1997),never compared with the model; complete hourly forcing (scenario cards WHEAT_CH_*); independent of the field-box campaign used for calibration
+B56,calibration,,
+B57,calibration,,
+B58,calibration,,
+B59,calibration,,
+B60,calibration,,
+B61,calibration,,
+B62,calibration,,
+B63,calibration,,
+B64,calibration,,
+datasets/wheat_DE_chamber_1993.csv,test,wheat chamber FZK 1993 (Diabate & Strack 1997),dataset of a test campaign
+datasets/wheat_DE_chamber_timeseries_1993.csv,test,wheat chamber FZK 1993 (Diabate & Strack 1997),dataset of a test campaign
+datasets/potato_bean_DE_chamber.csv,test,potato and bean chamber FZK (TECDOC-1738 Table 24),dataset of a test campaign
+datasets/pickering_chronic_ratios.csv,test,Pickering chronic (EMRAS TC14 Table 3.7),dataset of a test campaign

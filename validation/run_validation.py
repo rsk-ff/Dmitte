@@ -47,6 +47,7 @@ OUT = os.path.join(ROOT, 'validation', 'results')
 LAT = 51.97                   # Wageningen
 COMB_WATER = 0.556            # L combustion water per kg dry matter (starch/cellulose, 6.2 % H)
 STABILITY, HEG, X = 4, 20, 1000   # irrelevant for clamped-air experiments, required by Calc_air
+EXPOSURE_HOURS = (1, 2)           # field-box experiments are 1 h, chamber experiments (potato, wheat) 2 h
 
 # compartment order of transfer_equotions
 A_A2, A_S1, A_BH, A_BO, A_FH, A_FO = 2, 3, 6, 7, 8, 9
@@ -207,13 +208,36 @@ def safe_div(a, b):
     return a / b if b > 0 else np.nan
 
 
-def acute_metrics(ys, i0, pools, k):
-    h0 = i0 + 1
+def grain_phases(pr):
+    """Anthesis time and the linear phase of storage-organ growth (WOFOST TWSO) of one season.
+
+    The linear phase is where the daily TWSO increment is at least half its seasonal maximum
+    (the "linear phase of grain growth" of Diabate & Strack 1997, Table 5).
+    """
+    dvs, twso = pr['DVS'], pr['TWSO'].fillna(0)
+    anthesis = dvs.index[np.argmax(dvs.values >= 1)] if (dvs.values >= 1).any() else None
+    daily = twso.resample('D').last().diff()
+    linear = daily.index[daily.values >= 0.5 * np.nanmax(daily.values)] if daily.notna().any() else []
+    start = linear[0] if len(linear) else None
+    end = linear[-1] + pd.Timedelta(days=1) if len(linear) else None
+    return anthesis, start, end
+
+
+def phase_of(t, start, end):
+    if start is None:
+        return ''
+    return 'before' if t < start else ('during' if t < end else 'after')
+
+
+def acute_metrics(ys, i0, i1, pools, k):
+    """Metrics of an exposure over hours [i0, i1); h0 is the end of exposure."""
+    h0 = i1
     hv = len(ys) - 1
     c_leaf = lambda i: safe_div(ys[i, A_BH], pools['w_plant'][min(i, hv - 1)])
     c_fruit_tfwt = lambda i: safe_div(ys[i, A_FH], pools['w_fruit'][min(i, hv - 1)])
     obt_total_conc = safe_div(ys[h0, A_BO] + ys[h0, A_FO],
                               pools['comb_body'][i0] + pools['comb_edible'][i0])
+    obt_leaf_conc = safe_div(ys[h0, A_BO], pools['comb_body'][min(h0, hv - 1)])
     plant_t = ys[:, [A_BH, A_BO, A_FH, A_FO]]
     i24 = min(h0 + 24, hv)
     return dict(
@@ -225,6 +249,7 @@ def acute_metrics(ys, i0, pools, k):
         tfwt_drop_edible=safe_div(np.nanmax([c_fruit_tfwt(i) for i in range(h0, hv + 1)]), c_fruit_tfwt(hv)),
         TLI_edible=100 * safe_div(safe_div(ys[hv, A_FO], pools['comb_edible'][hv - 1]), c_leaf(h0)),
         obt_end_over_air=100 * obt_total_conc,
+        obt_end_over_leaf=100 * safe_div(obt_leaf_conc, c_leaf(h0)),
         obt_share_24h=100 * safe_div(plant_t[i24, [1, 3]].sum(), plant_t[i24].sum()),
         obt_formed_24h_per_leaf_h0=safe_div(ys[i24, A_BO] + ys[i24, A_FO], ys[h0, A_BH]),
         min_inventory=float(ys.min()),
@@ -250,6 +275,7 @@ def main():
             for forcing in ('diurnal', 'daily'):
                 pr, air, soil, plant = model_state(crop, year, forcing)
                 pools = season_arrays(air, soil, plant)
+                anthesis, lin_start, lin_end = grain_phases(pr)
                 idx = pd.date_range(f'{year}-{cfg["window"][0]}', f'{year}-{cfg["window"][1]}', freq='h')
                 for vname, vfun in VARIANTS.items():
                     k_raw = vfun('HTO', cfg['plant_type'], air, soil, plant)
@@ -273,14 +299,19 @@ def main():
                     days = pd.date_range(f'{year}-{cfg["exposures"][0]}', f'{year}-{cfg["exposures"][1]}', freq='7D')
                     for day in days:
                         for label, hour in (('day', 11), ('night', 23)):
-                            if forcing == 'daily' and label == 'night':
-                                continue
-                            i0 = idx.get_loc(day + pd.Timedelta(hours=hour))
-                            ys = run_clamped(P, pools['w_air'], i0, i0 + 1)
-                            m = acute_metrics(ys, i0, pools, k)
-                            acute_rows.append(dict(crop=crop, year=year, forcing=forcing, variant=vname,
-                                                   exposure=day.strftime('%m-%d'), time=label,
-                                                   DVS=float(pr['DVS'].iloc[i0]), **m))
+                            for duration in EXPOSURE_HOURS:
+                                if forcing == 'daily' and (label == 'night' or duration != 1):
+                                    continue
+                                t0 = day + pd.Timedelta(hours=hour)
+                                i0 = idx.get_loc(t0)
+                                ys = run_clamped(P, pools['w_air'], i0, i0 + duration)
+                                m = acute_metrics(ys, i0, i0 + duration, pools, k)
+                                daa = (t0 - anthesis) / pd.Timedelta(days=1) if anthesis is not None else np.nan
+                                acute_rows.append(dict(crop=crop, year=year, forcing=forcing, variant=vname,
+                                                       exposure=day.strftime('%m-%d'), time=label,
+                                                       duration_h=duration, DVS=float(pr['DVS'].iloc[i0]),
+                                                       days_after_anthesis=daa,
+                                                       grain_phase=phase_of(t0, lin_start, lin_end), **m))
                     ys = run_clamped(P, pools['w_air'], 0, len(P))
                     chronic_rows.append(dict(crop=crop, year=year, forcing=forcing, variant=vname,
                                              **chronic_metrics(ys, pools)))
