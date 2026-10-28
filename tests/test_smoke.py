@@ -91,3 +91,13 @@ def test_benchmark_test_split_is_frozen():
     assert {c['benchmark'] for c in analyze.CHECKS} <= set(bench.index)
     split = pd.read_csv(os.path.join(analyze.BENCH_DIR, 'split.csv'))
     assert set(split.id[~split.id.str.startswith('datasets/')]) == set(bench.index)
+
+
+def test_solve_con_is_exact_for_stiff_rates():
+    # a2 <-> s1 exchange much faster than the hourly step: equilibrium within the first hour
+    k_array = np.zeros((3, 29))
+    k_array[:, 8] = 5000.0                      # ka2_s1
+    k_array[:, 7] = 1000.0                      # ks1_a2
+    As = solve_con('HTO', 1.0, k_array, 0.0)
+    np.testing.assert_allclose(As[1, [2, 3]], [0.0, 5 / 6], atol=1e-9)   # air reset to 0 after the first hour
+    np.testing.assert_allclose(As[2, [2, 3]], [5 / 6 / 6, 5 / 6 * 5 / 6], rtol=1e-9)

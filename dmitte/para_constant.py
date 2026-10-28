@@ -4,6 +4,11 @@ import numpy as np
 RHO = 1.2923       # 空气密度，单位 kg/m^3
 DISSOZ = 1.0       # HTO分布耗散系数
 ALF_HTO = 1.1      # 液态水与水汽之间 HTO 的平衡分馏系数
+DMF_LEAF = 0.2     # 叶片干物质含量 (含水 80 %: IAEA-TECDOC-1991 Eq. 43; Diabate & Strack 1997)
+ID_OBT = 0.8       # OBT 生成的同位素歧视因子 (IAEA-TECDOC-1991 Eq. 43, IDp)
+COMB_WATER = 0.556 # 干物质的燃烧水当量, kg 水 / kg 干物质 (淀粉/纤维素含氢 6.2 %)
+KBO_BH = np.log(2) / (10 * 24)   # 茎叶 OBT 周转 (半衰期 10 d), h-1
+OBT_DARK = 0.3     # 夜间 OBT 生成速率 / 白天平均生成速率 (IAEA-TECDOC-1738 Sec. 7.1-7.2: 0.1-0.5; 取基准 B15 的中值)
 CO2DRY = 1.5       # co2到干物质的转化因子
 Fsoil = 3.4E4      # 土层之间的质量流量
 mixLayerH = [1600, 1200, 800, 560, 320, 200]                  # 混合层高度

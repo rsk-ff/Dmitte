@@ -39,13 +39,12 @@ warnings.filterwarnings('ignore')
 
 from dmitte import calc_para, run_wofost  # noqa: E402
 from dmitte.calc_para import Calc_air, Calc_plant, Calc_soil  # noqa: E402
-from dmitte.para_constant import ALF_HTO, LAMBDA_T_H  # noqa: E402
+from dmitte.para_constant import ALF_HTO, COMB_WATER, LAMBDA_T_H  # noqa: E402
 from dmitte.transfer_equotions import (solve_con, transfer_equotions, transfer_rates,  # noqa: E402
                                        transfer_rates_baomi, transfer_rates_UFORTI, water_balance_residual)
 
 OUT = os.path.join(ROOT, 'validation', 'results')
 LAT = 51.97                   # Wageningen
-COMB_WATER = 0.556            # L combustion water per kg dry matter (starch/cellulose, 6.2 % H)
 STABILITY, HEG, X = 4, 20, 1000   # irrelevant for clamped-air experiments, required by Calc_air
 EXPOSURE_HOURS = (1, 2)           # field-box experiments are 1 h, chamber experiments (potato, wheat) 2 h
 

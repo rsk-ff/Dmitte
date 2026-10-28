@@ -40,7 +40,7 @@ def stub_state(plant_type, sta, n=3):
     soil = SimpleNamespace(VDSO=4e-3 * ones, ESOIL=0.1 * ones, Va_b1=signed, Va_b2=signed,
                            BODW1=0.3 * ones, soil1w=15.0 * ones, soil2w=30.0 * ones, soil3w=45.0 * ones)
     plant = SimpleNamespace(VDPF=1e-2 * ones, ROW=17.3 * ones, ETRM=0.2 * ones, plant_w=2.0 * ones, plant_wh=0.22 * ones,
-                            friut_w=1.0 * ones, friut_wh=0.11 * ones, TROBT=1e-4 * ones)
+                            friut_w=1.0 * ones, friut_wh=0.11 * ones, TROBT=1e-4 * ones, TROBT_FRUIT=2e-4 * ones)
     return air, soil, plant
 
 
@@ -114,9 +114,43 @@ def test_soil_evaporation_rate_divides_by_layer1_water(rate_fn):
 
 def test_cereal_fruit_formation_rate_uses_crop_half_life():
     air, soil, plant = stub_state('CEREAL', sta=6)
-    for rate_fn in (transfer_rates, transfer_rates_UFORTI, transfer_rates_Korea):
+    k = transfer_rates_UFORTI('HTO', 'CEREAL', air, soil, plant)
+    hwz = para_constant.HWZ[para_constant.Plant_dict['CEREAL']['ICOMP'] - 1]
+    expected = np.log(2) / (hwz / 2) * (plant.friut_wh / plant.plant_wh) / 24
+    np.testing.assert_allclose(k[:, K['kbh_fo']], expected)
+    for rate_fn in (transfer_rates, transfer_rates_Korea):
         k = rate_fn('HTO', 'CEREAL', air, soil, plant)
-        hwz = para_constant.HWZ[para_constant.Plant_dict['CEREAL']['ICOMP'] - 1]
-        expected = np.log(2) / (hwz / 2) * (plant.friut_wh / plant.plant_wh) / 24
-        np.testing.assert_allclose(k[:, K['kbh_fo']], expected)
-        np.testing.assert_allclose(k[:, K['kbh_fh']], np.log(2) / 2)
+        np.testing.assert_allclose(k[:, K['kbh_fo']], plant.TROBT_FRUIT)    # growth-based (calc_transOBT)
+        np.testing.assert_allclose(k[:, K['kbh_fh']], np.log(2) / 2)       # water stock constant: no growth flow
+
+
+@pytest.mark.parametrize('sta', range(1, 7))
+def test_wind_speed_increases_with_height_and_friction_velocity_is_plausible(sta):
+    from dmitte.calc_para import Calc_air
+    air = Calc_air.__new__(Calc_air)
+    air.sta, air.U10 = sta, np.array([1.0, 3.0, 6.0])
+    air.calc_USTERN()
+    air.calc_airesistance()
+    assert np.all(air.U100 > air.U10)                  # the input wind is measured at 10 m
+    np.testing.assert_allclose(air.U100, air.U10 * 10 ** para_constant.ISK[sta - 1])
+    if sta == 4:                                       # neutral: u*/U10 of a rough crop surface
+        assert np.all((air.USTERN / air.U10 > 0.05) & (air.USTERN / air.U10 < 0.25))
+        assert (air.RAM + air.RB)[1] < 60              # s/m at U10 = 3 m/s (was about 240 with the 100 m wind)
+
+
+def test_stomata_open_by_day_and_close_at_night():
+    plant = Calc_plant.__new__(Calc_plant)
+    plant.ICOMP = para_constant.Plant_dict['CEREAL']['ICOMP']
+    ones = np.ones(3)
+    plant.WATG, plant.FE, plant.TTE = ones, 0.9 * ones, 0.95 * ones
+    plant.PAR = np.array([600.0, 0.001, 600.0])
+    plant.RST = 1 + 30 / plant.PAR
+    plant.rainfall, plant.r_h = np.array([0.0, 0.0, 0.5]), np.array([0.6, 0.9, 0.6])
+    plant.LAI = np.full(3, 4.0)
+    plant.RAM, plant.RB = np.full(3, 40.0), np.full(3, 15.0)
+    plant.calc_st_res()
+    rcmin = para_constant.RCMIN[plant.ICOMP - 1]
+    rpho = plant.RST * plant.WATG / (plant.FE * plant.TTE)
+    np.testing.assert_allclose(plant.RC1[[0, 2]], rcmin * rpho[[0, 2]] / 4)    # day, rain does not close stomata
+    assert plant.RC1[1] == pytest.approx(15 * rcmin / 4)                       # night
+    np.testing.assert_allclose(plant.RGES, plant.RAM + plant.RB + 100 * plant.RC1)   # RC1 in s/cm
