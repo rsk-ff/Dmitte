@@ -39,6 +39,8 @@ Soil_dict = {'SOIL1': {'SMW': 0.04, 'SWFCF': 0.11, 'SM0': 0.39, 'K0': 99.7},
 HWZ = [60, 60, 90, 60, 50]             # 土豆的生长期为90天,小麦生长期为60天；
 LT = [90, 303, 455, 670]               # [第一年植物生长期的第一天，最后一天，第二年植物生长期的第一天，最后一天]
 RCMIN = [2.0, 2.0, 1.5, 2.0]           # 按叶面指数归一化的最小气孔扩散阻滞因子
+RC_NIGHT = 4.                          # 夜间 (及 RH > 98 %) 气孔阻力 = RC_NIGHT * RCMIN; 原为 15,
+                                       # 在校准集夜间基准上标定 (validation/calibrate_night_resistance.py)
 Plant_dict = {'LEAFY_PLANT': {'ICOMP': 1, 'TMAXL': 45.0, 'TMINL': 0, 'TOPTL': 25.0, 'VPD': 0.2, 'RCPAR': 20.0},
               'GRASS':     {'ICOMP': 2, 'TMAXL': 45.0, 'TMINL': 0, 'TOPTL': 25.0, 'VPD': 0.2, 'RCPAR': 20.0},
               'ROOT_VEG':  {'ICOMP': 3, 'TMAXL': 45.0, 'TMINL': 0, 'TOPTL': 25.0, 'VPD': 0.2, 'RCPAR': 50.0},

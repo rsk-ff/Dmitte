@@ -155,5 +155,5 @@ def test_stomata_open_by_day_and_close_at_night():
     rcmin = para_constant.RCMIN[plant.ICOMP - 1]
     rpho = plant.RST * plant.WATG / (plant.FE * plant.TTE)
     np.testing.assert_allclose(plant.RC1[[0, 2]], rcmin * rpho[[0, 2]] / 4)    # day, rain does not close stomata
-    assert plant.RC1[1] == pytest.approx(15 * rcmin / 4)                       # night
+    assert plant.RC1[1] == pytest.approx(para_constant.RC_NIGHT * rcmin / 4)        # night
     np.testing.assert_allclose(plant.RGES, plant.RAM + plant.RB + 100 * plant.RC1)   # RC1 in s/cm

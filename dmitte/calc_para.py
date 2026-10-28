@@ -461,10 +461,10 @@ class Calc_plant(Calc_air):
         self.RPHO = self.RST * self.WATG / (self.FE * self.TTE)
         self.RPHO = np.minimum (self.RPHO, 15)  # 保证 RPHO 不超过 15
 
-        # 气孔阻力 RC: 白天 RCMIN * RPHO, 夜间及近饱和 (RH > 98 %) 时取最大值 15 * RCMIN;
+        # 气孔阻力 RC: 白天 RCMIN * RPHO, 夜间及近饱和 (RH > 98 %) 时取 RC_NIGHT * RCMIN;
         # 冠层阻力 RC1 = RC / LAI, s/cm。逐时降雨由日雨量均分而来, 不作为气孔关闭的条件。
         closed = (self.PAR < 2) | (self.r_h > 0.98)
-        RC = np.where(closed, 15. * RCMINA, RCMINA * self.RPHO)
+        RC = np.where(closed, para_constant.RC_NIGHT * RCMINA, RCMINA * self.RPHO)
         self.RC1 = np.where(self.LAI > 0, RC / self.LAI, 1.E9)
 
         # 计算 RGES (RAM、RB 为 s/m, RC1 为 s/cm)
