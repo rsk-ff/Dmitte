@@ -88,7 +88,8 @@ benchmarks/
 | 文件 | 内容 | 可用于 |
 |---|---|---|
 | `wheat_DE_chamber_1993.csv` | 小麦舱室 2 h 暴露，开花后 1–33 d 共 10 次：叶片 HTO（结束时、1 d）、穗与籽粒 OBT | 叶片衰减、TLI 随生育期变化 |
-| `wheat_DE_field_box_1h.csv` | 小麦田间箱 1 h 暴露 14 次（07:00–23:00）：温度、RH、PPFD、开花后天数，叶片 OBT（1 h、2 h、4 h、1 d）、籽粒 TLI | **昼夜对比**、OBT 生成与输出动态 |
+| `wheat_DE_field_box_1h.csv` | 小麦田间箱 1 h 暴露 14 次（07:00–23:00）：温度、RH、PPFD、开花后天数，暴露结束时叶片 TFWT / 平均空气 HTO（图 25，从柱状图读取，约 ±5 %），叶片 OBT（1 h、2 h、4 h、1 d）、籽粒 TLI；`shaded_in_table22` 标出表 22 中加灰底的 7 次 | **昼夜对比**、OBT 生成与输出动态；`scenario_field_box.py` 逐次驱动 |
+| `wheat_DE_field_box_air_HTO.csv` | 上述 5 次暴露（f9、f10、f12、f13、f14）的箱内空气水汽 HTO 时间过程，每 5 min 一点（图 26，从散点图读取，约 ±5 %） | 暴露小时内的空气浓度形状 |
 | `wheat_DE_TFWT_halflife.csv` | 小麦叶、茎、穗、全株 TFWT 半衰期（黎明/白天/黄昏/夜间） | 叶–气交换速率的昼夜变化 |
 | `potato_bean_DE_chamber.csv` | **马铃薯**和菜豆 2 h 暴露：叶/茎/块茎（荚）TLI，叶片吸收（昼 83 %、夜 14 %） | 马铃薯的直接基准 |
 | `soybean_KR_TFWT_timeseries.csv` | 大豆 SB1、SB4：植株和豆荚 TFWT 从 0.2 h 到收获（2280 h）的时间序列 | **可直接逐点对比模型时间序列** |
