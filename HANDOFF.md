@@ -71,9 +71,9 @@ python -m pytest tests                     # 62 个测试
 `d4c06a4` 田间箱按实测条件驱动 · `bab578f` 标定 RC_NIGHT · `aeda958` 合并迁移率变体、删除 UFOTRI ·
 `5ffc134` 植物水平衡、气孔昼夜、OBT 按生长 · `bad8dc1` 基准 v3 与冻结测试集 · `56de19c` 质量守恒与对称交换 · `0faccbf` 单位与索引错误
 
-## 7 下一步（用户尚未选定）
+## 7 下一步（用户选定：先 A 后 B）
 
 - A. 补充分析：用 `WHEAT_CH_HOURLY_DAY/NIGHT` 情景卡（Diabaté & Strack 1997 逐时数据，`datasets/wheat_DE_chamber_timeseries_1993.csv`，测试数据）
-  驱动舱室实验，明确标注为测试后的补充分析，说明 B46 的偏差有多少来自实验条件。我的建议是先做这一项。
+  驱动舱室实验，明确标注为测试后的补充分析，说明 B46 的偏差有多少来自实验条件。**已完成**：`validation/supplementary_chamber.py`，结果见 `validation/README.md` 第 4.7 节（白天叶片 TFWT 为实测 0.89 倍，B46 的偏差基本来自条件；夜间暴露后暗期叶片 OBT 偏高 7.6 倍，留给敏感性分析）。
 - B. 论文分析：动态 vs 常数迁移率（用本模型冻结时间变化的版本作基线，不用 UFOTRI）、释放日期扫描、EMRAS TC14 第 9 章假想情景
   （仓库 Case 1/2/3 对应稳定度 1/4/6）、Morris → Sobol 敏感性分析（候选参数：RC_NIGHT 3–6、TAU_ASSIM、KBH_FH、PERCOLATION、箱内阻力等）。
