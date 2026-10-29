@@ -135,7 +135,8 @@ def metrics(ys, pools, i0):
                 TLI=100 * ys[hv, rv.A_FO] / pools['comb_edible'][n - 1] / c_end)
 
 
-def main():
+def run(cases=RA_CASES):
+    """Model metrics for every exposure, WOFOST season and box-ventilation case."""
     exps = pd.read_csv(os.path.join(DATA, 'wheat_DE_field_box_1h.csv'))
     shapes, measured_curve = air_shapes(exps.experiment)
     rows = []
@@ -147,7 +148,7 @@ def main():
         for _, e in exps.iterrows():
             t0 = anthesis.normalize() + pd.Timedelta(days=int(e.days_after_anthesis), hours=int(e.start_hour))
             i0 = idx.get_loc(t0)
-            for case, ra in RA_CASES.items():
+            for case, ra in cases.items():
                 u10 = None if ra is None else ra_times_u[i0] / ra
                 air, soil, plant = model_state(pr, set_box_conditions(forcing, i0, e, u10), start, end)
                 k = transfer_rates('HTO', 'CEREAL', air, soil, plant)
@@ -158,7 +159,12 @@ def main():
                                  rc_exposure=float(plant.RC1[i0] * 100), measured_air_curve=e.experiment in measured_curve,
                                  **metrics(ys, pools, i0)))
         print('wheat', year, 'done', flush=True)
-    res = pd.DataFrame(rows)
+    return pd.DataFrame(rows)
+
+
+def main():
+    exps = pd.read_csv(os.path.join(DATA, 'wheat_DE_field_box_1h.csv'))
+    res = run()
     res.to_csv(os.path.join(OUT, 'scenario_field_box.csv'), index=False)
     report(res, exps)
     figure(res, exps)

@@ -16,6 +16,12 @@ where crop-specific data exist (match = crop), otherwise with a proxy crop
 (match = proxy) or a crop-independent value (match = general), and uses the
 exposure duration of the experiment (1 h field box, 2 h chamber).
 
+The wheat field-box benchmarks (subset = field_box: B4, B5, B22, B23, B26, B29, B49, B50) come
+from the 14 exposures that scenario_field_box.py drives with their measured conditions; they are
+scored on results/scenario_field_box.csv with the box aerodynamic resistance of
+BOX_CASE (15 s/m), and the 8 and 30 s/m runs are reported as its range.
+Run order: run_validation.py, scenario_field_box.py, analyze.py.
+
 Verdict on the model median (diurnal forcing, all years and exposure dates):
   within the published range           -> consistent
   within a factor 2 of the range       -> close  (model-data variability is at least a
@@ -52,8 +58,9 @@ FROZEN_TEST_FINGERPRINT = '067765dc47f5b13370605917708c3e381386f9b6d1367f5c15839
 def check(bid, crop, metric, match, time='all', hours=1, phase=None, daa=None, subset=None):
     """One benchmark-model comparison.
 
-    time: day / night / all (acute rows); hours: exposure duration; phase: grain-filling phase
-    (before / during / after); daa: (min, max) days after anthesis; subset: 'pair' or 'chronic'.
+    time: day / night / all (acute rows; field box: day = 09-15 h, night = 23 h exposures); hours: exposure
+    duration; phase: grain-filling phase (before / during / after); daa: (min, max) days after anthesis;
+    subset: 'pair', 'chronic' or 'field_box'.
     """
     return dict(benchmark=bid, crop=crop, metric=metric, match=match, time=time, hours=hours, phase=phase,
                 daa=daa, subset=subset)
@@ -77,18 +84,18 @@ CHECKS = [
     check('B25', 'potato', 'R0_leaf', 'crop', time='night', hours=2, daa=(13, 45)),  # test
     check('B34', 'potato', 'chronic_OBT_over_air', 'crop', subset='chronic'),       # test (root crops)
     # ---- wheat
-    check('B4', 'wheat', 'R0_night_over_day', 'crop', subset='pair'),
-    check('B49', 'wheat', 'R0_leaf', 'crop', time='day'),
-    check('B50', 'wheat', 'R0_leaf', 'crop', time='night'),
-    check('B5', 'wheat', 'k_exchange', 'crop', time='day'),
-    check('B29', 'wheat', 'k_exchange', 'crop', time='night'),
+    check('B4', 'wheat', 'R0_night_over_day', 'crop', subset='field_box'),
+    check('B49', 'wheat', 'R0_leaf', 'crop', time='day', subset='field_box'),
+    check('B50', 'wheat', 'R0_leaf', 'crop', time='night', subset='field_box'),
+    check('B5', 'wheat', 'k_exchange', 'crop', time='day', subset='field_box'),
+    check('B29', 'wheat', 'k_exchange', 'crop', time='night', subset='field_box'),
     check('B59', 'wheat', 'k_exchange', 'crop', time='day'),
     check('B60', 'wheat', 'k_exchange', 'crop', time='night'),
     check('B6', 'wheat', 'k_day_over_night', 'general', subset='pair'),
-    check('B22', 'wheat', 'obt_end_over_leaf', 'crop', time='day'),
-    check('B23', 'wheat', 'obt_end_over_leaf', 'crop', time='night'),
+    check('B22', 'wheat', 'obt_end_over_leaf', 'crop', time='day', subset='field_box'),
+    check('B23', 'wheat', 'obt_end_over_leaf', 'crop', time='night', subset='field_box'),
     check('B15', 'wheat', 'obt_night_over_day', 'general', subset='pair'),
-    check('B26', 'wheat', 'TLI_edible', 'crop', daa=(12, 28)),
+    check('B26', 'wheat', 'TLI_edible', 'crop', subset='field_box'),
     check('B9', 'wheat', 'tfwt_drop_leaf', 'proxy'),                 # rice
     check('B20', 'wheat', 'chronic_leaf_OBT_over_TFWT', 'general', subset='chronic'),
     check('B46', 'wheat', 'R0_leaf', 'crop', time='day', hours=2),            # test
@@ -162,7 +169,25 @@ def select(acute, c, variant):
     return a
 
 
-def model_values(acute, chronic, c, variant):
+# box aerodynamic resistance used to score the field-box benchmarks (run name in scenario_field_box.py)
+BOX_CASE = 'RAM+RB 15 s/m'
+# metric names of results/scenario_field_box.csv
+FIELD_BOX_METRIC = {'R0_leaf': 'R0_leaf', 'k_exchange': 'k_after', 'obt_end_over_leaf': 'obt_1h', 'TLI_edible': 'TLI'}
+
+
+def field_box_values(scenario, c, case):
+    s = scenario[scenario.case == case]
+    hour = pd.to_datetime(s.date).dt.hour
+    day, night = s[hour.between(9, 15)], s[hour == 23]
+    if c['metric'] == 'R0_night_over_day':            # per season: mean night / mean day uptake
+        return (night.groupby('year').R0_leaf.mean() / day.groupby('year').R0_leaf.mean()).values
+    s = {'day': day, 'night': night, 'all': s}[c['time']]
+    return s[FIELD_BOX_METRIC[c['metric']]].values
+
+
+def model_values(acute, chronic, c, variant, scenario=None):
+    if c['subset'] == 'field_box':
+        return field_box_values(scenario, c, BOX_CASE)
     if c['subset'] == 'chronic':
         ch = chronic[(chronic.forcing == 'diurnal') & (chronic.crop == c['crop']) & (chronic.variant == variant)]
         return ch[c['metric']].values
@@ -181,13 +206,18 @@ def fmt(x):
     return f'{x:.3g}' if np.isfinite(x) else 'nan'
 
 
-def comparison(acute, chronic, bench, checks):
+def comparison(acute, chronic, bench, checks, scenario=None):
     rows = []
     for c in checks:
         b = bench.loc[c['benchmark']]
         lo, hi = bench_range(b)
+        box_range = {}
+        if c['subset'] == 'field_box':
+            for ra in (8, 30):
+                v = np.asarray(field_box_values(scenario, c, f'RAM+RB {ra} s/m'), dtype=float)
+                box_range[f'model_median_box{ra}'] = float(np.median(v[np.isfinite(v)]))
         for variant in VARIANT_ORDER:
-            v = np.asarray(model_values(acute, chronic, c, variant), dtype=float)
+            v = np.asarray(model_values(acute, chronic, c, variant, scenario), dtype=float)
             v = v[np.isfinite(v)]
             med = float(np.median(v)) if len(v) else np.nan
             p5, p95 = (np.percentile(v, [5, 95]) if len(v) else (np.nan, np.nan))
@@ -197,7 +227,8 @@ def comparison(acute, chronic, bench, checks):
                              benchmark_quantity=b['quantity'], benchmark_crop=b['crop'], setting=b['setting'],
                              bench_low=lo, bench_high=hi, unit=b['unit'],
                              model_median=med, model_p5=p5, model_p95=p95,
-                             n=len(v), verdict=verd, factor_off=factor))
+                             n=len(v), verdict=verd, factor_off=factor,
+                             driven=c['subset'] == 'field_box', **box_range))
     return pd.DataFrame(rows)
 
 
@@ -207,6 +238,11 @@ def report(comp, title):
     print(f'==== {title}')
     print(show[['benchmark', 'crop', 'match', 'variant', 'metric', 'bench', 'model', 'verdict', 'factor_off']]
           .to_string(index=False))
+    driven = comp[comp.driven]
+    if len(driven):
+        print(f'field-box benchmarks scored on the driven runs ({BOX_CASE}); median with box RAM+RB 8 and 30 s/m:')
+        print(driven[['benchmark', 'metric', 'model_median', 'model_median_box8', 'model_median_box30']]
+              .to_string(index=False, float_format=lambda x: f'{x:.3g}'))
     print(comp.groupby(['crop', 'variant']).verdict.value_counts().unstack(fill_value=0))
 
 
@@ -345,6 +381,10 @@ def main():
     os.makedirs(FIG, exist_ok=True)
     acute = pd.read_csv(os.path.join(RES, 'acute_exposures.csv'), dtype={'exposure': str})
     chronic = pd.read_csv(os.path.join(RES, 'chronic_exposure.csv'))
+    scenario_path = os.path.join(RES, 'scenario_field_box.csv')
+    if not os.path.exists(scenario_path):
+        raise SystemExit('run validation/scenario_field_box.py first (field-box benchmarks are scored on it)')
+    scenario = pd.read_csv(scenario_path)
     bench = pd.read_csv(os.path.join(BENCH_DIR, 'literature_benchmarks.csv')).set_index('id')
     bench['id'] = bench.index
 
@@ -354,13 +394,13 @@ def main():
     print(f'test split: {len(test_ids)} benchmarks, {len(test_files)} datasets, fingerprint {fingerprint[:12]} ({status})')
 
     calib = [c for c in CHECKS if c['benchmark'] not in test_ids]
-    comp = comparison(acute, chronic, bench, calib)
+    comp = comparison(acute, chronic, bench, calib, scenario)
     comp.to_csv(os.path.join(RES, 'benchmark_comparison.csv'), index=False)
     report(comp, 'calibration benchmarks')
 
     allowed = set(bench.index) - test_ids
     if args.include_test:
-        test = comparison(acute, chronic, bench, [c for c in CHECKS if c['benchmark'] in test_ids])
+        test = comparison(acute, chronic, bench, [c for c in CHECKS if c['benchmark'] in test_ids], scenario)
         test.to_csv(os.path.join(RES, 'benchmark_comparison_test.csv'), index=False)
         report(test, 'TEST benchmarks')
         allowed = set(bench.index)

@@ -1,11 +1,14 @@
 """Calibrate the night stomatal resistance factor RC_NIGHT on the calibration benchmarks.
 
 Night (and RH > 98 %) stomatal resistance is RC_NIGHT * RCMIN (dmitte.calc_para.calc_st_res).
-For each value on a grid the virtual experiments of run_validation.py are rerun and compared
-with the calibration benchmarks (analyze.py). The objective is the sum of squared log10 factors
-by which the model median misses the night targets (0 when inside the published range):
+For each value on a grid the virtual experiments of run_validation.py and the driven field-box
+exposures of scenario_field_box.py are rerun and compared with the calibration benchmarks
+(analyze.py; the field-box benchmarks B4, B29, B50 are scored on the driven runs). The objective is
+the sum of squared log10 factors by which the model median misses the night targets (0 when
+inside the published range):
 
-    wheat:  B29, B60 (night exchange rate), B50 (night 1 h uptake), B4 (night/day uptake), B6 (day/night exchange)
+    wheat:  B29 (field box) and B60 (greenhouse) night exchange rate, B50 (field box night 1 h uptake),
+            B4 (field box night/day uptake), B6 (day/night exchange, review)
     potato: B57 (night exchange rate), B6
 
 The value is chosen on both crops together; each crop is also calibrated alone and checked on
@@ -31,6 +34,7 @@ warnings.filterwarnings('ignore')
 
 import analyze as an  # noqa: E402
 import run_validation as rv  # noqa: E402
+import scenario_field_box as fb  # noqa: E402
 from dmitte import para_constant  # noqa: E402
 
 GRID = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 15]
@@ -73,7 +77,8 @@ def main():
                 rv.main()
                 acute = pd.read_csv(os.path.join(out, 'acute_exposures.csv'), dtype={'exposure': str})
                 chronic = pd.read_csv(os.path.join(out, 'chronic_exposure.csv'))
-            comp = an.comparison(acute, chronic, bench, calib)
+            scenario = fb.run({case: fb.RA_CASES[case] for case in (an.BOX_CASE, 'RAM+RB 8 s/m', 'RAM+RB 30 s/m')})
+            comp = an.comparison(acute, chronic, bench, calib, scenario)
             comp['rc_night'] = f
             rows.append(comp)
             print(f'RC_NIGHT = {f}: objective both {objective(comp, ("wheat", "potato")):.3f}', flush=True)
