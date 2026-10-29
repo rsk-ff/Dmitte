@@ -29,7 +29,7 @@ Metrics: for RC_NIGHT, the log10 factor by which each left-out target misses its
 benchmarks at the fold value. For TAU_ASSIM, the RMS of log10(model/observed shape ratio) of the
 left-out exposures, against the in-sample RMS of the full-data fit.
 
-Run from the repository root after validation/build_inputs.py (about 25 minutes):
+Run from the repository root after validation/build_inputs.py (about 10 minutes):
     python validation/cross_validate_calibration.py
 writes validation/results/cv_rc_night_grid.csv, cv_tau_assim_grid.csv, cv_rc_night.csv, cv_tau_assim.csv
 and cv_stdout.txt.

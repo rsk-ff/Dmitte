@@ -1,0 +1,62 @@
+=== RC_NIGHT: leave-one-group-out ===
+            fold  rc_night  rc_night_full  consistent  close  off benchmark   crop  bench_low  bench_high  model_fold  log10_miss_fold  model_full  log10_miss_full
+none (full data)       4.0            4.0          13     11    1       NaN    NaN        NaN         NaN         NaN              NaN         NaN              NaN
+       field box       5.0            4.0          16      8    1        B4  wheat      0.167       0.375       0.290            0.000       0.349            0.000
+       field box       5.0            4.0          16      8    1       B50  wheat     17.000      19.000      17.004            0.000      20.523            0.033
+       field box       5.0            4.0          16      8    1       B29  wheat      0.240       0.380       0.159            0.179       0.188            0.105
+      greenhouse       4.0            4.0          13     11    1       B57 potato      0.187       0.420       0.234            0.000       0.234            0.000
+      greenhouse       4.0            4.0          13     11    1       B60  wheat      0.100       0.225       0.169            0.000       0.169            0.000
+          review       4.0            4.0          13     11    1        B6 potato      3.000       5.000       2.657            0.053       2.657            0.053
+          review       4.0            4.0          13     11    1        B6  wheat      3.000       5.000       2.843            0.023       2.843            0.023
+   wheat targets       5.0            4.0          16      8    1        B4  wheat      0.167       0.375       0.290            0.000       0.349            0.000
+   wheat targets       5.0            4.0          16      8    1       B50  wheat     17.000      19.000      17.004            0.000      20.523            0.033
+   wheat targets       5.0            4.0          16      8    1       B29  wheat      0.240       0.380       0.159            0.179       0.188            0.105
+   wheat targets       5.0            4.0          16      8    1       B60  wheat      0.100       0.225       0.144            0.000       0.169            0.000
+   wheat targets       5.0            4.0          16      8    1        B6  wheat      3.000       5.000       3.393            0.000       2.843            0.023
+  potato targets       4.0            4.0          13     11    1       B57 potato      0.187       0.420       0.234            0.000       0.234            0.000
+  potato targets       4.0            4.0          13     11    1        B6 potato      3.000       5.000       2.657            0.053       2.657            0.053
+
+left-out targets: RMS log10 miss at fold value 0.071, at full-data value 0.047; within a factor 2: 14 / 14 (full 14)
+
+=== TAU_ASSIM: leave-one-out ===
+ rc_night       split left_out  n_points  tau_full  tau_fold  rms_out_of_sample  rms_in_sample
+      4.0    exposure       f1         2         6         6              0.324          0.324
+      4.0    exposure      f10         3         6         6              0.399          0.399
+      4.0    exposure      f11         3         6         6              0.667          0.667
+      4.0    exposure      f12         3         6         6              0.509          0.509
+      4.0    exposure      f13         3         6         6              0.309          0.309
+      4.0    exposure      f14         3         6         6              0.832          0.832
+      4.0    exposure      f15         3         6         6              0.410          0.410
+      4.0    exposure       f2         2         6         6              0.619          0.619
+      4.0    exposure       f3         3         6         6              0.819          0.819
+      4.0    exposure       f4         3         6         6              0.407          0.407
+      4.0    exposure       f5         2         6         6              0.614          0.614
+      4.0    exposure       f6         3         6         6              0.496          0.496
+      4.0    exposure       f7         2         6         6              0.445          0.445
+      4.0    exposure       f9         3         6         6              0.397          0.397
+      4.0 time of day     dawn         8         6         6              0.749          0.749
+      4.0 time of day      day        19         6         4              0.591          0.411
+      4.0 time of day     dusk         5         6         6              0.646          0.646
+      4.0 time of day    night         6         6         6              0.503          0.503
+      5.0    exposure       f1         2         6         6              0.318          0.318
+      5.0    exposure      f10         3         6         6              0.392          0.392
+      5.0    exposure      f11         3         6         6              0.691          0.691
+      5.0    exposure      f12         3         6         6              0.531          0.531
+      5.0    exposure      f13         3         6         6              0.301          0.301
+      5.0    exposure      f14         3         6         6              0.833          0.833
+      5.0    exposure      f15         3         6         4              0.680          0.406
+      5.0    exposure       f2         2         6         6              0.619          0.619
+      5.0    exposure       f3         3         6         6              0.820          0.820
+      5.0    exposure       f4         3         6         6              0.404          0.404
+      5.0    exposure       f5         2         6         6              0.655          0.655
+      5.0    exposure       f6         3         6         6              0.516          0.516
+      5.0    exposure       f7         2         6         6              0.445          0.445
+      5.0    exposure       f9         3         6         6              0.390          0.390
+      5.0 time of day     dawn         8         6         6              0.749          0.749
+      5.0 time of day      day        19         6         4              0.577          0.407
+      5.0 time of day     dusk         5         6         6              0.677          0.677
+      5.0 time of day    night         6         6         6              0.523          0.523
+RC_NIGHT 4.0, by exposure: TAU_ASSIM folds [6]; pooled RMS out-of-sample 0.545, in-sample 0.545
+RC_NIGHT 4.0, by time of day: TAU_ASSIM folds [4, 6]; pooled RMS out-of-sample 0.623, in-sample 0.545
+RC_NIGHT 5.0, by exposure: TAU_ASSIM folds [4, 6]; pooled RMS out-of-sample 0.573, in-sample 0.552
+RC_NIGHT 5.0, by time of day: TAU_ASSIM folds [4, 6]; pooled RMS out-of-sample 0.623, in-sample 0.552
