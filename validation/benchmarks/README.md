@@ -37,6 +37,7 @@ benchmarks/
 | Pickering 慢性释放（EMRAS TC14 表 3.7） | B34–B37 | `pickering_chronic_ratios.csv` | 从未参与模型对比 |
 
 测试集的 sha256 指纹记录在 `../analyze.py`（`FROZEN_TEST_FINGERPRINT`），`tests/test_smoke.py` 会在测试集被改动时报错。
+测试集已于 2026-10-29 用模型 commit `4e09ac5` 运行一次，结果见 `../README.md` 第 4.6 节。
 模型修改全部完成后，才用 `python validation/analyze.py --include-test` 运行一次。
 
 ## 1 主要来源

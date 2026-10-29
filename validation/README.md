@@ -39,6 +39,11 @@ UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上�
 标定夜间阻力后为 马铃薯 8/3/0、小麦 3/8/3，田间箱基准改用实测条件驱动的结果评分后小麦为 6/6/2。
 加入叶片同化物库后为 马铃薯 7/4/0、小麦 6/7/1，剩下的 1 个 ❌ 是夜间暴露结束时的叶片 OBT（B23）。
 
+**测试集（2026-10-29 运行一次，模型 commit `4e09ac5`，第 4.6 节）**：15 条中 13 条有模型对应，✅ 3、⚠️ 8、❌ 2，
+11 / 13 在 2 倍以内（校准集为 24 / 25）。符合的是马铃薯块茎 TLI（B12）和小麦籽粒 TLI 在线性灌浆期及之后（B54、B55）；
+偏离的是舱室强光下的小麦叶片吸收（B46，模型低 2.1 倍）和 Pickering 块根慢性 OBT/空气（B34，模型高 2.3 倍）。
+测试集已经用过，之后对模型的任何修改都不能再用它作独立检验。
+
 ## 2 数据
 
 ### 2.1 文献基准（`benchmarks/`，v3）
@@ -90,6 +95,8 @@ UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上�
    除 B12 外它们此前都没有参与过模型对比（B12 在 v1–v2 报告中出现过，属于已知泄漏）。
    `analyze.py` 默认只比较和绘制校准集；测试集的指纹（sha256）记录在 `analyze.py` 中，`tests/test_smoke.py` 检查它没有被改动。
    模型修改全部完成后，用 `python validation/analyze.py --include-test` 运行一次测试集。
+   **已于 2026-10-29 用 commit `4e09ac5` 运行**（第 4.6 节）；运行前重跑了 `run_validation.py` 和 `scenario_field_box.py`，
+   结果文件与提交版本逐字节相同。
 7. **田间箱基准用实测条件驱动的结果评分**：小麦田间箱的 B4、B5、B22、B23、B26、B29、B49、B50 来自同一组 14 次暴露，
    由 `scenario_field_box.py` 逐次复现（第 4.4 节），`analyze.py` 从 `results/scenario_field_box.csv` 取模型值。
    箱内空气动力学阻力没有报告，评分取 15 s/m，同时列出 8 和 30 s/m 的结果。白天、夜间分别取 09–15 时和 23 时的暴露。
@@ -300,6 +307,47 @@ B9（叶片 TFWT 从暴露结束到收获的降幅）3 800 → 10 000（仍 ✅�
 之后持平，1 d 时降到约 0.3 %。一阶的单一同化物库做不到两者兼顾（τ 短则 1 d 太低，τ 长则 4 h 太高）。实测曲线提示暴露期间的标记
 比按总光合计算的快得多（例如糖类中可快速交换的氢位），这需要另一种机制，没有在这一版中加入。
 
+### 4.6 测试集（一次性运行）
+
+2026-10-29 用模型 commit `4e09ac5`（第 4.5 节之后的版本）运行 `analyze.py --include-test`，测试集指纹与冻结时相同。
+运行前重跑了两个实验脚本，`results/` 中的 CSV 与提交版本逐字节相同，所以结果对应的就是提交的模型。
+运行后没有修改模型、检查定义或判定规则。输出：`results/benchmark_comparison_test.csv`、`results/analyze_test_stdout.txt`。
+
+测试检查沿用冻结时的定义：都来自通用虚拟实验（舱室实验为 2 h 暴露），没有用实测条件驱动。括号内为模型 5–95 % 分位。
+
+| 基准 | 作物 | 文献指标 | 实验作物与类型 | 模型 | 文献 |
+|---|---|---|---|---|---|
+| B12 | 马铃薯 | TLI = OBT in tubers at harvest / leaf TFWT at end of exposure | potato tuber；chamber | 0.25 ✅（0.12–0.48） | 0.2–0.3 % |
+| B24 | 马铃薯 | leaf TFWT / air-moisture HTO after 2 h exposure (high light) | potato；chamber | 44 ⚠️（26–55） | 55–124.5 % |
+| B25 | 马铃薯 | leaf TFWT / air-moisture HTO after 2 h exposure (night) | potato；chamber | 34 ⚠️（22–46） | 9.3–21 % |
+| B34 | 马铃薯 | root crop OBT / air-moisture HTO (chronic) | root crops (carrot, potato, beet, garlic, mixed)；field | 0.91 ❌（0.9–1） | 0.21–0.39 - |
+| B46 | 小麦 | leaf TFWT / air-moisture HTO at end of 2 h exposure (high light) | wheat；chamber | 39 ❌（29–61） | 84–88 % |
+| B47 | 小麦 | leaf TFWT / air-moisture HTO at end of 2 h exposure (low light) | wheat；chamber | 39 ⚠️（29–61） | 70–80 % |
+| B48 | 小麦 | leaf TFWT / air-moisture HTO at end of 2 h exposure (night) | wheat；chamber | 28 ⚠️（20–37） | 13–27 % |
+| B51 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 2 h exposure (day) | wheat；chamber | 1.5 ⚠️（0.89–3.4） | 1–1.2 % |
+| B52 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 2 h exposure (night) | wheat；chamber | 0.25 ⚠️（0.15–0.59） | 0.4–0.6 % |
+| B53 | 小麦 | TLI grain, 2 h exposure before the linear phase of grain growth | wheat；chamber | 0.031 ⚠️（0.0061–0.41） | 0.06–0.2 % |
+| B54 | 小麦 | TLI grain, 2 h exposure during the linear phase of grain growth | wheat；chamber | 0.41 ✅（0.17–0.81） | 0.4–0.9 % |
+| B55 | 小麦 | TLI grain, 2 h exposure after the linear phase of grain growth | wheat；chamber | 0.069 ✅（0–0.21） | 0.04–0.2 % |
+| B35 | 小麦 | grain OBT / air-moisture HTO (chronic) | grain (corn, barley, spring wheat)；field | 0.92 ⚠️（0.87–1） | 0.18–0.48 - |
+| B36 | — | soil water HTO (top 5 cm) / air-moisture HTO (chronic) | soil；Pickering | 未评估 | 0.29–0.36 |
+| B37 | — | rain HTO / air-moisture HTO (monthly) | rain；Pickering | 未评估 | 0.11–0.82 |
+
+判定数：马铃薯 ✅ 1 / ⚠️ 2 / ❌ 1，小麦 ✅ 2 / ⚠️ 6 / ❌ 1；合计 13 项中 11 项在 2 倍以内。同一模型在校准集上为 25 项中 24 项
+（马铃薯 7/4/0、小麦 6/7/1）。B36、B37 在冻结时就没有定义模型检查（验证程序不输出慢性土壤水和雨水比值），这次没有补加，
+如需评估应作为补充分析单独说明。B12 在 v1–v2 报告中出现过（第 3 节第 6 条），不是完全独立的。
+
+解读（没有据此修改模型）：
+- **TLI 随灌浆阶段的变化是对的**：线性灌浆期 0.41 %（0.4–0.9 %，B54 ✅），之后 0.069 %（B55 ✅），之前 0.031 %（0.06–0.2 %，B53 ⚠️，偏低约 2 倍）。
+  这三条直接检验“迁移率随作物生长变化”：同样的 2 h 暴露，TLI 随 WOFOST 的籽粒增长速率相差一个数量级。马铃薯块茎 TLI 0.25 %（0.2–0.3 %，B12 ✅）。
+- **舱室叶片吸收与田间箱在通用实验中的问题相同**：白天偏低（B24 低 1.3 倍、B47 低 1.8 倍、B46 低 2.1 倍），夜间偏高（B25 高 1.6 倍、B48 接近）。
+  舱室有风扇，而通用实验用站点风速的空气动力学阻力（50–70 s/m）。田间箱用实测条件驱动后这一偏差基本消失（第 4.4 节）；
+  舱室实验有完整的逐时强迫（`WHEAT_CH_HOURLY_*` 情景卡），但冻结的检查没有驱动它们。
+- **暴露结束时叶片 OBT**：白天偏高 1.25 倍（B51 ⚠️），夜间偏低 1.6 倍（B52 ⚠️），与校准集中夜间偏低（B23）方向一致。
+- **Pickering 慢性比值**：块根 OBT/空气模型 0.91（0.21–0.39，B34 ❌），谷物 0.92（0.18–0.48，B35 ⚠️）。模型与校准集中的
+  Chalk River 菜园（0.72–1.14，B18 ✅）一致；两组观测本身相差约 3 倍（冻结前已在 `benchmarks/README.md` 中记录：Pickering 按采样前
+  两个月的空气均值归一化，Chalk River 按灌浆期 10–20 d），同一个模型不可能同时符合两者。
+
 ## 5 发现的问题
 
 ### 5.1 已修正
@@ -414,6 +462,6 @@ python validation/analyze.py                # 对比表 + 图（只含校准集�
 python validation/calibrate_night_resistance.py  # 夜间气孔阻力系数的标定（第 4.2 节，约 5 分钟）
 python validation/scenario_field_box.py         # 实测条件驱动小麦田间箱实验（第 4.4 节，约 1 分钟）
 python validation/calibrate_assimilate_residence.py  # 同化物停留时间的标定（第 4.5 节，约 2 分钟）
-python validation/analyze.py --include-test # 只在模型修改全部完成后运行一次：评估冻结的测试集
+python validation/analyze.py --include-test # 评估冻结的测试集（已于 2026-10-29 运行，第 4.6 节）
 python -m pytest tests                      # 各步修正的回归测试
 ```
