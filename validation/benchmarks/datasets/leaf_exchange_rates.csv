@@ -1,0 +1,38 @@
+crop,condition,quantity,low,central,high,unit,note,source_id,table
+komatsuna,night 1995,HTO/D2O uptake rate constant,0.46,0.65,0.84,h-1,mean +/- SD; roots probably contributed (soil not covered),TECDOC1738,Table 37
+orange,night 1995,HTO/D2O uptake rate constant,,0.06,0.35,h-1,0.06 +/- 0.29,TECDOC1738,Table 37
+komatsuna,night 1996,HTO/D2O uptake rate constant,0.16,0.20,0.24,h-1,mean +/- SD,TECDOC1738,Table 37
+radish,night 1996,HTO/D2O uptake rate constant,0.26,0.31,0.36,h-1,mean +/- SD,TECDOC1738,Table 37
+tomato,night 1996,HTO/D2O uptake rate constant,0.10,0.12,0.14,h-1,mean +/- SD,TECDOC1738,Table 37
+komatsuna,night 1995,stomatal resistance (porometer),5.7,,40,s cm-1,,TECDOC1738,Table 37
+orange,night 1995,stomatal resistance (porometer),49,,55,s cm-1,,TECDOC1738,Table 37
+komatsuna,night 1996,stomatal resistance (porometer),2.7,,3.2,s cm-1,,TECDOC1738,Table 37
+radish,night 1996,stomatal resistance (porometer),2.6,,3.4,s cm-1,,TECDOC1738,Table 37
+tomato,night 1996,stomatal resistance (porometer),6.9,,15,s cm-1,,TECDOC1738,Table 37
+lettuce young,day,uptake rate constant,,0.023,,h-1,low chamber light,TECDOC1738,Table 38
+lettuce young,night,uptake rate constant,,0.027,,h-1,low chamber light,TECDOC1738,Table 38
+lettuce mature,day,uptake rate constant,,0.04,,h-1,low chamber light,TECDOC1738,Table 38
+lettuce mature,night,uptake rate constant,,0.005,,h-1,low chamber light,TECDOC1738,Table 38
+lettuce before flowering,day,uptake rate constant,,0.11,,h-1,low chamber light,TECDOC1738,Table 38
+lettuce before flowering,night,uptake rate constant,,0.035,,h-1,low chamber light,TECDOC1738,Table 38
+tangerine,day,leaf uptake rate constant (D2O 8 h),0.2,,1.1,h-1,,TECDOC1738,Sec. 7.3.3
+tangerine,night,leaf uptake rate constant (D2O 8 h),0.03,,0.12,h-1,,TECDOC1738,Sec. 7.3.3
+tangerine,day,leaf TFWD loss rate constant,0.8,,1.2,h-1,,TECDOC1738,Sec. 7.3.3
+tangerine,night,leaf TFWD loss rate constant,0.03,,0.2,h-1,,TECDOC1738,Sec. 7.3.3
+rice,day vs night,uptake rate constant ratio day/night (D2O 8 h),4,,5,-,,TECDOC1738,Sec. 7.3.1
+komatsuna/radish,night,stomatal resistance (porometer),,300,,s m-1,cherry tomato 700-1500 s m-1,TECDOC1738,Sec. 7.8
+cuticle,stomata closed,cuticular resistance (model default),,4000,,s m-1,,TECDOC1738,Sec. 7.8
+canopy,day,canopy stomatal resistance (typical average),,300,,s m-1,,TECDOC1991,Sec. 2.3.2
+canopy,night,canopy stomatal resistance (typical average),,10000,,s m-1,,TECDOC1991,Sec. 2.3.2
+wheat (vegetative),day,maximum stomatal resistance (exp.),41,,52,s m-1,Baldocchi,TECDOC1738,Table 17
+wheat (anthesis),day,maximum stomatal resistance (exp.),62,,100,s m-1,Baldocchi,TECDOC1738,Table 17
+maize (vegetative),day,maximum stomatal resistance (exp.),121,,131,s m-1,Baldocchi,TECDOC1738,Table 17
+wheat,day,maximum stomatal resistance (exp.),17,,20,s m-1,Choudhury and Idso,TECDOC1738,Table 17
+potato,day,maximum stomatal resistance (exp.),100,,130,s m-1,Vos and Groenwold,TECDOC1738,Table 17
+alfalfa,day,maximum stomatal resistance (exp.),100,,120,s m-1,Saugier and Katerji,TECDOC1738,Table 17
+soya,day,maximum stomatal resistance (exp.),,66,,s m-1,Oliosa et al.,TECDOC1738,Table 17
+grass C3,day,maximum stomatal resistance (exp.),,74,,s m-1,Knapp,TECDOC1738,Table 17
+grass C4,day,maximum stomatal resistance (exp.),,151,,s m-1,Knapp,TECDOC1738,Table 17
+grass,wind 4 m s-1,boundary layer resistance Rb,,60,,s m-1,crop height 0.1 m,TECDOC1738,Table 14
+crop,wind 4 m s-1,boundary layer resistance Rb,,20,,s m-1,crop height 1 m,TECDOC1738,Table 14
+coniferous forest,wind 4 m s-1,boundary layer resistance Rb,,10,,s m-1,crop height 10 m,TECDOC1738,Table 14

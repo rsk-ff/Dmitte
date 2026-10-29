@@ -1,0 +1,60 @@
+experiment,days_after_flowering,plant_part,sampling,quantity,value_Bq_per_mL,source_id,table
+W6b,1,ear,1 d,OBT,831,TECDOC1738,Table 20
+W7b,6,ear,1 d,OBT,478.6,TECDOC1738,Table 20
+W6a,7,ear,1 d,OBT,568,TECDOC1738,Table 20
+W7a,12,ear,1 d,OBT,787,TECDOC1738,Table 20
+W8b,15,ear,1 d,OBT,822,TECDOC1738,Table 20
+WN2a,19,ear,1 d,OBT,427,TECDOC1738,Table 20
+W8a,21,ear,1 d,OBT,384,TECDOC1738,Table 20
+W6b,1,ear,harvest,OBT,81.2,TECDOC1738,Table 20
+W7b,6,ear,harvest,OBT,113.7,TECDOC1738,Table 20
+W6a,7,ear,harvest,OBT,151,TECDOC1738,Table 20
+W7a,12,ear,harvest,OBT,381,TECDOC1738,Table 20
+WN2b,13,ear,harvest,OBT,222,TECDOC1738,Table 20
+W8b,15,ear,harvest,OBT,523,TECDOC1738,Table 20
+WN2a,19,ear,harvest,OBT,357,TECDOC1738,Table 20
+W8a,21,ear,harvest,OBT,481,TECDOC1738,Table 20
+W9b,27,ear,harvest,OBT,394,TECDOC1738,Table 20
+W9a,33,ear,harvest,OBT,296,TECDOC1738,Table 20
+W6b,1,grain,harvest,OBT,51,TECDOC1738,Table 20
+W7b,6,grain,harvest,OBT,229,TECDOC1738,Table 20
+W6a,7,grain,harvest,OBT,179,TECDOC1738,Table 20
+W7a,12,grain,harvest,OBT,483,TECDOC1738,Table 20
+WN2b,13,grain,harvest,OBT,474,TECDOC1738,Table 20
+W8b,15,grain,harvest,OBT,657,TECDOC1738,Table 20
+WN2a,19,grain,harvest,OBT,447,TECDOC1738,Table 20
+W8a,21,grain,harvest,OBT,610,TECDOC1738,Table 20
+W9b,27,grain,harvest,OBT,543,TECDOC1738,Table 20
+W9a,33,grain,harvest,OBT,362,TECDOC1738,Table 20
+W6b,1,leaf,2 h (end of exposure),HTO,81899,TECDOC1738,Table 20
+W7b,6,leaf,2 h (end of exposure),HTO,89379,TECDOC1738,Table 20
+W6a,7,leaf,2 h (end of exposure),HTO,94254,TECDOC1738,Table 20
+W7a,12,leaf,2 h (end of exposure),HTO,86642,TECDOC1738,Table 20
+WN2b,13,leaf,2 h (end of exposure),HTO,72911,TECDOC1738,Table 20
+W8b,15,leaf,2 h (end of exposure),HTO,106130,TECDOC1738,Table 20
+WN2a,19,leaf,2 h (end of exposure),HTO,67441,TECDOC1738,Table 20
+W8a,21,leaf,2 h (end of exposure),HTO,93513,TECDOC1738,Table 20
+W9b,27,leaf,2 h (end of exposure),HTO,98587,TECDOC1738,Table 20
+W9a,33,leaf,2 h (end of exposure),HTO,96886,TECDOC1738,Table 20
+W7b,6,leaf,>1 h (label as printed),HTO,64347,TECDOC1738,Table 20
+W7a,12,leaf,>1 h (label as printed),HTO,66938,TECDOC1738,Table 20
+WN2b,13,leaf,>1 h (label as printed),HTO,59431,TECDOC1738,Table 20
+WN2a,19,leaf,>1 h (label as printed),HTO,71115,TECDOC1738,Table 20
+W9b,27,leaf,>1 h (label as printed),HTO,91702,TECDOC1738,Table 20
+W9a,33,leaf,>1 h (label as printed),HTO,80361,TECDOC1738,Table 20
+W6b,1,leaf,>2 h (label as printed),HTO,49727,TECDOC1738,Table 20
+W6a,7,leaf,>2 h (label as printed),HTO,50433,TECDOC1738,Table 20
+W7a,12,leaf,>2 h (label as printed),HTO,52124,TECDOC1738,Table 20
+W8b,15,leaf,>2 h (label as printed),HTO,45824,TECDOC1738,Table 20
+WN2a,19,leaf,>2 h (label as printed),HTO,56562,TECDOC1738,Table 20
+W8a,21,leaf,>2 h (label as printed),HTO,50115,TECDOC1738,Table 20
+W9b,27,leaf,>2 h (label as printed),HTO,73764,TECDOC1738,Table 20
+W9a,33,leaf,>2 h (label as printed),HTO,74301,TECDOC1738,Table 20
+W6b,1,leaf,1 d,HTO,2934,TECDOC1738,Table 20
+W7b,6,leaf,1 d,HTO,4720,TECDOC1738,Table 20
+W6a,7,leaf,1 d,HTO,3903,TECDOC1738,Table 20
+W7a,12,leaf,1 d,HTO,4677,TECDOC1738,Table 20
+W8b,15,leaf,1 d,HTO,6329,TECDOC1738,Table 20
+WN2a,19,leaf,1 d,HTO,6051,TECDOC1738,Table 20
+W8a,21,leaf,1 d,HTO,6383,TECDOC1738,Table 20
+W9b,27,leaf,1 d,HTO,4675,TECDOC1738,Table 20

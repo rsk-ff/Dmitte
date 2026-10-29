@@ -1,0 +1,5 @@
+experiment,days_to_harvest,n_leaves,fresh_mass_g,start_hour,temperature_C,RH_pct,light_klux,air_moisture_HTO_kBq_per_mL,leaf_HTO_end_kBq_per_mL,leaf_HTO_end_rel_air_pct,top_OBT_harvest_Bq_per_mL,TLI_pct,source_id,table
+C1,51,18,170,10,26.8,86,42,71,34,48.2,17,0.05,TECDOC1738,Table 34
+C2,42,22,500,10,29.1,83,52,30,18.8,62.2,32,0.17,TECDOC1738,Table 34
+C3,29,30,850,10,30.4,78,61,43,12.3,28.4,56,0.45,TECDOC1738,Table 34
+C4,17,40,1000,10,19.4,89,23,147,14,9.5,105,0.75,TECDOC1738,Table 34

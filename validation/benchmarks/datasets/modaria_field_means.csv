@@ -1,0 +1,7 @@
+dataset,sample,air_HTO_mean_Bq_per_L,air_HTO_sd,TFWT_mean_Bq_per_L,TFWT_sd,OBT_mean_Bq_per_L,OBT_sd,note,source_id,table
+IRSN-EDF,grass,11.3,27.2,10.5,15.7,9.2,4.5,randomly sampled; consistent mass balance,TECDOC1991,Table 3
+CNSC,grass,181,676,343,397,1081,513,23.5% of air HTO record missing,TECDOC1991,Table 3
+CNSC,L-potato,181,676,318,169,1290,685,23.5% of air HTO record missing,TECDOC1991,Table 3
+CNSC,R-potato,181,676,409,324,1823,705,23.5% of air HTO record missing,TECDOC1991,Table 3
+CNL,L-tomato,337,928,521,543,1274,754,sampled hours after plume passage (biased high),TECDOC1991,Table 3
+CNL,R-tomato,337,928,441,347,1456,826,sampled hours after plume passage (biased high),TECDOC1991,Table 3

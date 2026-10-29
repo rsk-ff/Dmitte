@@ -4,8 +4,13 @@ import pandas as pd
 from pcse.fileinput import CABOFileReader, YAMLCropDataProvider,YAMLAgroManagementReader, ExcelWeatherDataProvider
 from pcse.util import WOFOST72SiteDataProvider
 from pcse.base import ParameterProvider
-from pcse.models import Wofost72_WLP_FD
+from pcse.engine import Engine
 from datetime import datetime, timedelta
+
+# Stock Wofost72_WLP_FD.conf plus PGASS/PMRES, which calc_para.Calc_plant needs.
+WOFOST_CONF = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'conf', 'Wofost72_WLP_FD_dmitte.conf')
+# The master branch of WOFOST_crop_parameters is empty now; WOFOST 7.2 parameters live on this branch.
+WOFOST72_CROP_REPO = 'https://raw.githubusercontent.com/ajwdewit/WOFOST_crop_parameters/wofost72/'
 
 
 #%%
@@ -35,7 +40,12 @@ def plantModel(plant_type, plantmodel, date):
         # https://github.com/ajwdewit/WOFOST_crop_parameters
         print(agromanagement)
     else:
-        cropd = YAMLCropDataProvider()
+        # Prefer a local copy (./data/crop/wofost72) so runs work offline
+        local_crop_dir = os.path.join(data_dir, 'crop', 'wofost72')
+        if os.path.isdir(local_crop_dir):
+            cropd = YAMLCropDataProvider(fpath=local_crop_dir)
+        else:
+            cropd = YAMLCropDataProvider(repository=WOFOST72_CROP_REPO)
         # plantmodel_EXP = [crop, available_varieties, soilfile_name, agrofile_name]
         cropd.set_active_crop(plantmodel[0], plantmodel[1])
         agromanagement_file = os.path.join(data_dir, 'agro', plantmodel[3])
@@ -43,13 +53,12 @@ def plantModel(plant_type, plantmodel, date):
 
 # 初始化参数，运行wofost
     parameters = ParameterProvider (cropdata=cropd, soildata=soild, sitedata=sited)
-    wofsim = Wofost72_WLP_FD(parameters, wdp, agromanagement)
+    wofsim = Engine(parameters, wdp, agromanagement, config=WOFOST_CONF)
 
     start_date = datetime.strptime(date[0], '%Y-%m-%d').date()
     end_date = datetime.strptime(date[1], '%Y-%m-%d').date()
     wofsim.run_till(end_date)
     # wofsim.run_till_terminate()
-    # C:\Users\auror\miniconda3\envs\cttm\Lib\site-packages\pcse\conf\Wofost72_WLP_FD.conf
     df_results = pd.DataFrame(wofsim.get_output())
     # 输出模拟日期内所需的参数值。按日期切片，避免位置偏移在边界情况下截错数据。
     df_results = df_results.set_index("day")

@@ -59,9 +59,16 @@ data/
 Which soil and agro file a run uses comes from the `plantmodel` list in each script, e.g.
 `['potato', 'Potato_702', 'ec2.soil', 'potato.agro']` = crop, variety, soil file, agro file.
 
-Crop parameters for non-grass crops come from `YAMLCropDataProvider()`, which downloads
-the [WOFOST crop parameters](https://github.com/ajwdewit/WOFOST_crop_parameters) on first
-use, so the first run needs internet access.
+Crop parameters for non-grass crops are read from `data/crop/wofost72/` if it exists,
+otherwise downloaded from the `wofost72` branch of the
+[WOFOST crop parameters](https://github.com/ajwdewit/WOFOST_crop_parameters/tree/wofost72)
+(its `master` branch, PCSE 5.5's default, is empty now). WOFOST runs with
+`dmitte/conf/Wofost72_WLP_FD_dmitte.conf`, the stock config plus the `PGASS`/`PMRES`
+outputs that `calc_para.Calc_plant` reads.
+
+No data at hand? `python validation/build_inputs.py` builds a complete `data/` from public
+sources (Wageningen weather 2004-2008, `ec2.soil`, WOFOST 7.2 crop parameters) with
+`potato_YYYY.agro` / `wheat_YYYY.agro` files.
 
 `wofost_morris.py` reads `ScalarParametersOfWofost-Potential.xlsx` from the repo root
 (committed). `atmospheric_dispersion.py` and `dose_plot.py` read reference CSVs from `figures/`.
@@ -72,6 +79,12 @@ use, so the first run needs internet access.
 python potato_HTO.py        # also cereals_HTO.py, tomatoes_HTO.py, iaea-case1-HTO.py
 python dmitte_morris.py     # Morris sensitivity analysis
 ```
+
+## Validation
+
+`validation/` checks the model against published HTO exposure experiments (1 h exposures of
+crops, chronic garden-plot data). See [validation/README.md](validation/README.md) for the
+literature benchmarks, the method, the results and the model issues found.
 
 ## Tests
 

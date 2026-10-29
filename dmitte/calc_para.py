@@ -107,7 +107,9 @@ class Calc_air():
         B0 = para_constant.B0
         MEX = para_constant.ISK            # 风廓线幂指数值
         RLMON = A0[self.sta - 1] * IRAU ** B0[self.sta - 1]
-        self.U100 = self.U10 * (10 / 100) ** MEX[self.sta - 1]
+        # 风速测量高度 ZREF = 10 m (输入为 10 m 风速); 按幂律外推到 100 m 和稳定条件下的参考高度 URN
+        ZREF = 10.
+        self.U100 = self.U10 * (100 / ZREF) ** MEX[self.sta - 1]
 
         if self.sta == 4:  # sta=4,表示中性条件
             A10 = 60.0 - (6.0 * IRAU)
@@ -134,8 +136,7 @@ class Calc_air():
                 URN = 20.0
             elif IROUGH == 3:
                 URN = 30.0
-            # U100 = self.U10 * (URN / self.ZREF) ** MEX[self.sta - 1]
-            U100 = self.U10 * (URN / 100) ** MEX[self.sta - 1]
+            U100 = self.U10 * (URN / ZREF) ** MEX[self.sta - 1]
             L = 1.0 / RLMON
             A31 = np.log((URN - 6.0 * IRAU) / IRAU)
             self.USTERN = U100 * 0.41 / (A31 + (5.0 * (URN - 6.0 * IRAU) / L))
@@ -145,7 +146,7 @@ class Calc_air():
                 URN = 10.0
             elif IROUGH == 3:
                 URN = 20.0
-            U100 = self.U10 * (URN / 100) ** MEX[self.sta - 1]
+            U100 = self.U10 * (URN / ZREF) ** MEX[self.sta - 1]
             L = 1.0 / RLMON
             A31 = np.log((URN - 6.0 * IRAU) / IRAU)
             self.USTERN = U100 * 0.41 / (A31 + (5.0 * (URN - 6.0 * IRAU) / L))
@@ -245,15 +246,15 @@ class Calc_soil(Calc_air):
         PAR (float): 光合有效辐射 (W/m^2)
         LEAFA (float): 叶面积指数 (m^2/m^2)
         """
-        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
-        RSOILA = self.RSOIL                     # 土壤阻滞因子,m/s
+        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 s/m
+        RSOILA = self.RSOIL                     # 土壤阻滞因子,s/m
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压只差,N m-2
-        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 饱和水汽压差, kPa
+        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压曲线斜率, kPa/K
         
-        GAM = 0.67                            # 大气干湿度压力系数
+        GAM = 0.067                           # 干湿表常数, kPa/K(与 es、DELE 同为 kPa)
         RHO = 1.2923                          # 空气密度,单位 kg/m^3
-        CP = 1.013                            # 比热容,单位 J/(kg K)
+        CP = 1013.                            # 空气定压比热容, J/(kg K)
         LE = 2.45E+6                          # 水的蒸发潜热,单位 J/kg
         ALBEDO = 0.23                         # 地表反射率
 
@@ -378,6 +379,8 @@ class Calc_plant(Calc_air):
         self.tagp = TAGP.values
         TWSO = pcse_results['TWSO']
         self.twso = TWSO.values
+        self.twlv = pcse_results['TWLV'].values     # 叶片干重 (含枯叶), kg/ha
+        self.twst = pcse_results['TWST'].values     # 茎干重, kg/ha
         PGASS = pcse_results['PGASS']    # 潜在同化速率, kg CH2O ha-1 day - 1
         self.Pco = PGASS.values        
         PMRES = pcse_results['PMRES']    # 潜在维持呼吸速率, kg CH2O ha-1 day - 1
@@ -448,26 +451,24 @@ class Calc_plant(Calc_air):
         else:
             self.WATG = 0.4 * WAT1 + 0.6 * WAT2
 
-    # 计算 植物-大气的总阻滞因子,RGES
-    # 计算 植物传输阻力因子,RPHO, s/Cm
-    def calc_st_res(self, ISTRE=1):
-        # 计算 RCMINA 和 RC
+    # 计算 植物-大气的总阻滞因子,RGES, s/m
+    # 计算 气孔阻力的修正因子,RPHO (光照、土壤水、湿度、温度), 无量纲
+    def calc_st_res(self):
         np.seterr (divide='ignore', invalid='ignore')  # 消除被除数为0的警告
-        RCMINA = para_constant.RCMIN[self.ICOMP - 1] * np.ones_like(self.WATG)
-
-        # 计算RC
-        RC = 15. * RCMINA
-
-        # 根据条件修改 RC1 的值
-        condition = np.logical_or(self.PAR < 2, np.logical_and (self.PAR > 2, np.logical_or (self.rainfall > 0, self.r_h > 0.98))) | (ISTRE == 1)
-        self.RC1 = np.where(condition, np.where(self.LAI != 0, RC / self.LAI, 1.E9), 1.E9)
-
-        # 计算 RGES
-        self.RGES = self.RAM + self.RB + self.RC1
+        RCMINA = para_constant.RCMIN[self.ICOMP - 1] * np.ones_like(self.WATG)   # 叶片最小气孔阻力, s/cm
 
         # 计算 RPHO
         self.RPHO = self.RST * self.WATG / (self.FE * self.TTE)
         self.RPHO = np.minimum (self.RPHO, 15)  # 保证 RPHO 不超过 15
+
+        # 气孔阻力 RC: 白天 RCMIN * RPHO, 夜间及近饱和 (RH > 98 %) 时取 RC_NIGHT * RCMIN;
+        # 冠层阻力 RC1 = RC / LAI, s/cm。逐时降雨由日雨量均分而来, 不作为气孔关闭的条件。
+        closed = (self.PAR < 2) | (self.r_h > 0.98)
+        RC = np.where(closed, para_constant.RC_NIGHT * RCMINA, RCMINA * self.RPHO)
+        self.RC1 = np.where(self.LAI > 0, RC / self.LAI, 1.E9)
+
+        # 计算 RGES (RAM、RB 为 s/m, RC1 为 s/cm)
+        self.RGES = self.RAM + self.RB + self.RC1 * 100.
 
 
     # 计算 达到平衡所需的时间常数 LAMPF, s-1
@@ -496,15 +497,15 @@ class Calc_plant(Calc_air):
         PAR (float): 光合有效辐射 (W/m^2)
         LEAFA (float): 叶面积指数 (m^2/m^2)
         """
-        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 m/s
+        RATMOS = self.RAM + self.RB             # 大气阻滞因子之和,单位 s/m
         RSTOMA = self.RC1 * 100.                # 植物冠层气孔阻力因子,单位 m/s
         es = 0.6108 * np.exp(17.27 * self.TEMP / (self.TEMP + 237.3))  # 饱和蒸汽压,kpa,Tetens公式
-        EFEUDE = np.maximum(es - self.ea, 0.0)         # 空气实际与饱和的蒸汽压之差,N m-2
-        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压的温度依赖,单位 Pa
+        EFEUDE = np.maximum(es - self.ea, 0.0)         # 饱和水汽压差, kPa
+        DELE = 4098 * es / (self.TEMP + 237.3)**2    # 饱和水汽压曲线斜率, kPa/K
         
-        GAM = 0.67                            # 大气干湿度压力系数
+        GAM = 0.067                           # 干湿表常数, kPa/K(与 es、DELE 同为 kPa)
         RHO = 1.2923                          # 空气密度,单位 kg/m^3
-        CP = 1.013                            # 比热容,单位 J/(kg K)
+        CP = 1013.                            # 空气定压比热容, J/(kg K)
         LE = 2.45E+6                          # 水的蒸发潜热,单位 J/kg
         
         self.QSTR = self.PAR * (1- np.exp(-0.398 * self.LAI))
@@ -512,48 +513,58 @@ class Calc_plant(Calc_air):
         self.ETRM = ETRM * 3600.              # 此处 植物蒸腾速率 ETRM kg m-2 h-1
 
 
-    # 计算 植物实际光合作用率,HTO向OBT的转化 TROBT
+    # 计算 HTO -> OBT 的生成与转运速率, h-1 (IAEA-TECDOC-1991 Eq. 43 的增长形式, 经叶片同化物库 ba):
+    #   TR_ASSIM  叶片水 -> 同化物 OBT: ID_OBT * COMB_CH2O * 总光合 (WOFOST PGASS) * C_leaf
+    #   KBA_BO / KBA_FO / KBA_BH  同化物以停留时间 TAU_ASSIM 流出, 按当天的干物质分配去向:
+    #       茎叶增长 -> bo, 果实 (籽粒/块茎) 增长 -> fo, 其余 (呼吸、根) 的氢回到叶片水
+    #   所以 bo、fo 得到的 OBT 通量 = ID_OBT * COMB_WATER * 干物质增长 * C_leaf (延迟约 TAU_ASSIM)
+    #   TROBT     叶片水 -> 茎叶 OBT, 补上周转 KBO_BH 的损失, 使长期均匀暴露下茎叶 OBT/TFWT 趋于 ID_OBT
+    # 每日的生成量按逐时权重分配, 日总量不变: 白天正比于辐射, 夜间 (不依赖光的代谢途径) 为白天平均速率的 OBT_DARK 倍。
     def calc_transOBT(self):
-        '''
-        BEWG. : 作物含水量,/mm2; 【不同作物含水量不同！！】
-        RESP : 作物种类的总呼吸率, Rd
-        PAKT0 : CO2同化吸收率,g CO2 /m2 /h
-        PHMAX : 最大CO2同化吸收率,g CO2 /m2 /h
-        PAKT : 作物整个冠层的同化吸收率, [即作物的质量转移速率,g CO2 /h]
-        '''
-        TEMPK = self.TEMP + 237.15
-        C0 = [0.45, 1.0, 1.3, 1.7]             # 与作物种类有关的有机物质产生的值,mgCO2/M2/h
-        PROD = [0.30, 0.48, 0.61, 0.7]         # 不同作物的平均干物质产量,h/g
-        CO2DRY = 1.75                          # co2到干物质的转化因子,白天/夜晚权重因子(1.75/0.25)
-        DISSOZ = 0.5                           # HTO分布耗散系数
+        day = pd.Series(self.PAR > 2, index=self.meteo.index)
+        par = pd.Series(np.where(day, self.PAR, 0.0), index=self.meteo.index)
+        dates = self.meteo.index.normalize()
+        par_daylight = (par.groupby(dates).transform('sum') / day.groupby(dates).transform('sum')).values
+        weight = np.where(day, np.divide(par.values, par_daylight, out=np.ones(len(par)), where=par_daylight > 0),
+                          para_constant.OBT_DARK)
+        weight = pd.Series(weight, index=self.meteo.index)
+        light = (weight / weight.groupby(dates).transform('mean')).values
 
-        # drymatter_p = [160,170,600,500]      # 植物干物质, g m-2;
+        def growth(m):
+            m = np.nan_to_num(np.asarray(m, dtype=np.float64))
+            return np.maximum(np.gradient(m), 0.0) if m.size > 1 else np.zeros_like(m)
 
-        # ALBEDO = 0.23      # 地表反射率
-        # PHMAX = (0.158 * C0[self.ICOMP-1] * 1.0E9 * TEMPK * np.exp(-np.minimum(14200 / (TEMPK * 1.987), 50.))) / (
-        #     1. + (np.exp(-np.minimum(47200 / (TEMPK * 1.987), 90.)) * np.exp(153.4 / 1.987)))
+        m_veg = np.nan_to_num(self.twlv + self.twst) / 1E4     # 茎叶干重, kg/m2
+        m_fruit = np.nan_to_num(self.twso) / 1E4               # 果实干重, kg/m2
+        gpp = np.nan_to_num(np.asarray(self.Pco, dtype=np.float64)) / 1E4 / 24   # 总光合, kg CH2O m-2 h-1 (日均)
+        w = np.asarray(self.plant_w, dtype=np.float64)
+        per_leaf_water = lambda flux: np.divide(flux, w, out=np.zeros_like(w), where=w > 0)
+        self.TR_ASSIM = per_leaf_water(para_constant.ID_OBT * para_constant.COMB_CH2O * gpp * light)
+        self.TROBT = per_leaf_water(para_constant.ID_OBT * para_constant.COMB_WATER * para_constant.KBO_BH * m_veg * light)
 
-        # # PHMAX = (.044 * C0[self.ICOMP-1] * 1.0E9 * TEMPK * np.exp(-min (14200 / (TEMPK * 1.987), 50.))) / (
-        # #         1. + (np.exp(-min(47200 / (TEMPK * 1.987), 90.)) * np.exp(153.4 / 1.987)))
-        # PHMAX = PHMAX * 3.6
-        # PAKT1 = (PHMAX + self.PAR * 0.036 * 0.6 * (1. - ALBEDO)) / (
-        #         PHMAX + self.PAR * np.exp(-0.6 * self.LAI) * (1. - ALBEDO) * 0.036 * 0.6)
-        
-        # PAKT0 = PHMAX / 0.6 * np.log(PAKT1) / self.RPHO
-
-        # RESP = 0.36 * PAKT0 + 1.67E-4 * self.tagp     # 根据公式的 
-        # PAKT = PAKT0 - RESP 
-        PAKT = (self.Pco -self.rd) * 1000 / 1e4 / 24 / 30 * 44
-        PACT = PAKT * CO2DRY
-        Tm = 2.0E-2 /24 
-        self.TROBT =  PACT / PROD[self.ICOMP-1] * Tm * (1.75/0.25) * DISSOZ# / PROD[self.ICOMP-1]
+        # 当天进入茎叶和果实的氢占总光合氢的份额
+        daily = lambda x: pd.Series(x, index=self.meteo.index).groupby(dates).transform('sum').values
+        h_gpp = para_constant.COMB_CH2O * daily(gpp)
+        share = lambda m: np.divide(para_constant.COMB_WATER * daily(growth(m)), h_gpp,
+                                    out=np.zeros_like(h_gpp), where=h_gpp > 0)
+        to_veg, to_fruit = share(m_veg), share(m_fruit)
+        excess = np.maximum(to_veg + to_fruit, 1.0)
+        to_veg, to_fruit = to_veg / excess, to_fruit / excess
+        k = 1 / para_constant.TAU_ASSIM
+        self.KBA_BO, self.KBA_FO, self.KBA_BH = to_veg * k, to_fruit * k, (1 - to_veg - to_fruit) * k
 
 
     # 计算植物水库室中的水含量plant_w 和 有机物含量plant_o;kg/m2; 
+    # plant_w 是活叶片的水: TAGP 含贮藏器官 (籽粒/块茎), 果实水已单独计入 friut_w, 不能再算进植物水;
+    # TWLV 含枯叶, 按 LAI 相对其至今最大值折算为活叶。叶片含水量取 1 - DMF_LEAF。
     def calc_content(self,  drymatter):     
-        self.plant_w = self.tagp / 1E4 * (1 - drymatter) / drymatter
+        lai = np.nan_to_num(np.asarray(self.LAI, dtype=np.float64))
+        lai_max = np.maximum.accumulate(lai)
+        live = np.divide(lai, lai_max, out=np.zeros_like(lai), where=lai_max > 0)
+        self.leaf_dm = self.twlv / 1E4 * live
+        self.plant_w = self.leaf_dm * (1 - para_constant.DMF_LEAF) / para_constant.DMF_LEAF
         self.plant_wh = self.plant_w * 0.11
-        self.plant_o = self.tagp / 1E4
+        self.plant_o = (self.twlv + self.twst) / 1E4
         self.plant_oh = self.plant_o * 0.8 
         # 计算植物果实库室中的水含量friut_w 和 有机物含量friut_o;
         self.friut_w = self.twso / 1E4 * (1 - drymatter) / drymatter
@@ -567,8 +578,8 @@ class Calc_plant(Calc_air):
         # self.calc_LAMPF ()
         self.calc_VDPF ()
         self.calc_ETRM()
-        self.calc_transOBT()
         self.calc_content(drymatter)
+        self.calc_transOBT()
 
 
 #%%

@@ -3,11 +3,27 @@ import numpy as np
 # ------------------- 库室模型用 -----------------------
 RHO = 1.2923       # 空气密度，单位 kg/m^3
 DISSOZ = 1.0       # HTO分布耗散系数
+ALF_HTO = 1.1      # 液态水与水汽之间 HTO 的平衡分馏系数
+DMF_LEAF = 0.2     # 叶片干物质含量 (含水 80 %: IAEA-TECDOC-1991 Eq. 43; Diabate & Strack 1997)
+ID_OBT = 0.8       # OBT 生成的同位素歧视因子 (IAEA-TECDOC-1991 Eq. 43, IDp)
+COMB_WATER = 0.556 # 干物质的燃烧水当量, kg 水 / kg 干物质 (淀粉/纤维素含氢 6.2 %)
+KBO_BH = 0.        # 茎叶结构 OBT 的周转速率, h-1。原为 ln2/10 d (与 UFOTRI 相同); TECDOC-1991 式 43 只有生长稀释,
+                   # 周转及其补充生成使正午的生成量与总光合相当, 1 d 后的叶片 OBT 偏高, 改为 0 (见 validation/README.md 第 4.5 节)
+COMB_CH2O = 0.6    # 同化物 (CH2O) 的燃烧水当量, kg 水 / kg CH2O (含氢 2/30)
+TAU_ASSIM = 6.     # 叶片新鲜同化物 (糖、淀粉) 的平均停留时间, h; 在田间箱叶片 OBT 时间过程上标定
+                   # (validation/calibrate_assimilate_residence.py)
+PERCOLATION = 'constant'          # 土壤层间下渗方案: 'constant' (常数通量) 或 'darcy' (calc_soil_ab 的达西通量)
+KBH_FH = np.log(2) / 80           # 植物水 -> 果实水的交换速率 (不含生长所需的净液流), h-1
+OBT_DARK = 0.3     # 夜间 OBT 生成速率 / 白天平均生成速率 (IAEA-TECDOC-1738 Sec. 7.1-7.2: 0.1-0.5; 取基准 B15 的中值)
 CO2DRY = 1.5       # co2到干物质的转化因子
 Fsoil = 3.4E4      # 土层之间的质量流量
 mixLayerH = [1600, 1200, 800, 560, 320, 200]                  # 混合层高度
 LAMBDA_T_H = np.log(2) / (12.43 * 365 * 24)   # 氚衰变常数, 单位 h-1
 LAMBDA_T_D = np.log(2) / (12.43 * 365)        # 氚衰变常数, 单位 d-1
+
+# 成人食入剂量系数, mSv/Bq (ICRP-72: HTO 1.8E-11 Sv/Bq, OBT 4.2E-11 Sv/Bq)
+DOSE_COEF_HTO = 1.8E-8
+DOSE_COEF_OBT = 4.2E-8
 
 # 大气参数[对应A-F大气稳定度]
 ISK = [0.07, 0.13, 0.21, 0.34, 0.44, 0.44]                    # 风廓线幂指数
@@ -27,6 +43,8 @@ Soil_dict = {'SOIL1': {'SMW': 0.04, 'SWFCF': 0.11, 'SM0': 0.39, 'K0': 99.7},
 HWZ = [60, 60, 90, 60, 50]             # 土豆的生长期为90天,小麦生长期为60天；
 LT = [90, 303, 455, 670]               # [第一年植物生长期的第一天，最后一天，第二年植物生长期的第一天，最后一天]
 RCMIN = [2.0, 2.0, 1.5, 2.0]           # 按叶面指数归一化的最小气孔扩散阻滞因子
+RC_NIGHT = 4.                          # 夜间 (及 RH > 98 %) 气孔阻力 = RC_NIGHT * RCMIN; 原为 15,
+                                       # 在校准集夜间基准上标定 (validation/calibrate_night_resistance.py)
 Plant_dict = {'LEAFY_PLANT': {'ICOMP': 1, 'TMAXL': 45.0, 'TMINL': 0, 'TOPTL': 25.0, 'VPD': 0.2, 'RCPAR': 20.0},
               'GRASS':     {'ICOMP': 2, 'TMAXL': 45.0, 'TMINL': 0, 'TOPTL': 25.0, 'VPD': 0.2, 'RCPAR': 20.0},
               'ROOT_VEG':  {'ICOMP': 3, 'TMAXL': 45.0, 'TMINL': 0, 'TOPTL': 25.0, 'VPD': 0.2, 'RCPAR': 50.0},

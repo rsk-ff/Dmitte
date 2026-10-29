@@ -1,0 +1,6 @@
+experiment,days_to_harvest,leaf_HTO_end_kBq_per_mL,leaf_HTO_end_rel_air_pct,root_OBT_harvest_Bq_per_mL,TLI_pct,source_id,table
+R1,45,21,46,23,0.11,TECDOC1738,Table 33
+R2,35,25,40,75,0.30,TECDOC1738,Table 33
+R3,27,40,22,113,0.28,TECDOC1738,Table 33
+R4,15,37,33,93,0.25,TECDOC1738,Table 33
+R5,7,42,44,140,0.33,TECDOC1738,Table 33

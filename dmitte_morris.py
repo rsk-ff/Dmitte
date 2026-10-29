@@ -5,7 +5,7 @@ from SALib.analyze.morris import analyze
 
 from dmitte import para_constant, run_wofost
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
-from dmitte.transfer_equotions import transfer_rates, solve_con, transfer_rates_UFORTI, transfer_rates_baomi
+from dmitte.transfer_equotions import transfer_rates, solve_con
 from dmitte.para_constant import LAMBDA_T_H
 from openpyxl import load_workbook
 from joblib import Parallel, delayed
@@ -32,7 +32,7 @@ def model_function(params):
     plantfx.plant_w *= params[10]
     plantfx.friut_w *= params[11]
 
-    k_array = transfer_rates_baomi(char, plant_type, airfx, soilfx, plantfx)
+    k_array = transfer_rates(char, plant_type, airfx, soilfx, plantfx)
 
     As = solve_con('HTO', 9.78728318e+08, k_array, LAMBDA_T_H)
 
