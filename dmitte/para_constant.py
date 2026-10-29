@@ -7,7 +7,11 @@ ALF_HTO = 1.1      # 液态水与水汽之间 HTO 的平衡分馏系数
 DMF_LEAF = 0.2     # 叶片干物质含量 (含水 80 %: IAEA-TECDOC-1991 Eq. 43; Diabate & Strack 1997)
 ID_OBT = 0.8       # OBT 生成的同位素歧视因子 (IAEA-TECDOC-1991 Eq. 43, IDp)
 COMB_WATER = 0.556 # 干物质的燃烧水当量, kg 水 / kg 干物质 (淀粉/纤维素含氢 6.2 %)
-KBO_BH = np.log(2) / (10 * 24)   # 茎叶 OBT 周转 (半衰期 10 d), h-1
+KBO_BH = 0.        # 茎叶结构 OBT 的周转速率, h-1。原为 ln2/10 d (与 UFOTRI 相同); TECDOC-1991 式 43 只有生长稀释,
+                   # 周转及其补充生成使正午的生成量与总光合相当, 1 d 后的叶片 OBT 偏高, 改为 0 (见 validation/README.md 第 4.5 节)
+COMB_CH2O = 0.6    # 同化物 (CH2O) 的燃烧水当量, kg 水 / kg CH2O (含氢 2/30)
+TAU_ASSIM = 6.     # 叶片新鲜同化物 (糖、淀粉) 的平均停留时间, h; 在田间箱叶片 OBT 时间过程上标定
+                   # (validation/calibrate_assimilate_residence.py)
 PERCOLATION = 'constant'          # 土壤层间下渗方案: 'constant' (常数通量) 或 'darcy' (calc_soil_ab 的达西通量)
 KBH_FH = np.log(2) / 80           # 植物水 -> 果实水的交换速率 (不含生长所需的净液流), h-1
 OBT_DARK = 0.3     # 夜间 OBT 生成速率 / 白天平均生成速率 (IAEA-TECDOC-1738 Sec. 7.1-7.2: 0.1-0.5; 取基准 B15 的中值)

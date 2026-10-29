@@ -4,7 +4,7 @@ import numpy as np
 
 from dmitte.calc_para import _logarithmic_mean
 from dmitte.guassian import gaussian_puff_model
-from dmitte.transfer_equotions import solve_con
+from dmitte.transfer_equotions import A_NAMES, K_NAMES, solve_con
 
 
 class CoreModelRegressionTests(unittest.TestCase):
@@ -37,14 +37,14 @@ class CoreModelRegressionTests(unittest.TestCase):
         self.assertAlmostEqual(result[1], (2.0 - 1.0) / (np.log(2.0) - np.log(1.0)))
 
     def test_solve_con_does_not_mutate_transfer_rates(self):
-        rates = np.zeros((3, 29), dtype=np.float64)
+        rates = np.zeros((3, len(K_NAMES)), dtype=np.float64)
         rates[:, 17] = 0.693
         original = rates.copy()
 
         result = solve_con("hto", 1.0, rates, 0.0)
 
         np.testing.assert_array_equal(rates, original)
-        self.assertEqual(result.shape, (4, 10))
+        self.assertEqual(result.shape, (4, len(A_NAMES)))
         self.assertTrue(np.all(np.isfinite(result)))
 
 

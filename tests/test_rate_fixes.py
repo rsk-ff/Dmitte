@@ -7,12 +7,9 @@ import pytest
 
 from dmitte import para_constant
 from dmitte.calc_para import Calc_plant, Calc_soil
-from dmitte.transfer_equotions import transfer_rates
+from dmitte.transfer_equotions import K_INDEX, transfer_rates
 
-K_NAMES = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2', 'ka2_s1', 'ks2_s1',
-           'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh',
-           'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
-K = {name: i for i, name in enumerate(K_NAMES)}
+K = K_INDEX
 
 # both soil percolation options of transfer_rates
 RATE_FUNCTIONS = [partial(transfer_rates, percolation=p) for p in ('constant', 'darcy')]
@@ -41,7 +38,8 @@ def stub_state(plant_type, sta, n=3):
     soil = SimpleNamespace(VDSO=4e-3 * ones, ESOIL=0.1 * ones, Va_b1=signed, Va_b2=signed,
                            BODW1=0.3 * ones, soil1w=15.0 * ones, soil2w=30.0 * ones, soil3w=45.0 * ones)
     plant = SimpleNamespace(VDPF=1e-2 * ones, ROW=17.3 * ones, ETRM=0.2 * ones, plant_w=2.0 * ones, plant_wh=0.22 * ones,
-                            friut_w=1.0 * ones, friut_wh=0.11 * ones, TROBT=1e-4 * ones, TROBT_FRUIT=2e-4 * ones)
+                            friut_w=1.0 * ones, friut_wh=0.11 * ones, TROBT=1e-4 * ones, TR_ASSIM=1e-3 * ones,
+                            KBA_BH=0.04 * ones, KBA_BO=0.02 * ones, KBA_FO=0.02 * ones)
     return air, soil, plant
 
 
@@ -113,7 +111,9 @@ def test_soil_evaporation_rate_divides_by_layer1_water(rate_fn):
 def test_fruit_rates_use_growth_based_obt_and_the_exchange_option():
     air, soil, plant = stub_state('CEREAL', sta=6)
     k = transfer_rates('HTO', 'CEREAL', air, soil, plant)
-    np.testing.assert_allclose(k[:, K['kbh_fo']], plant.TROBT_FRUIT)      # growth-based (calc_transOBT)
+    np.testing.assert_allclose(k[:, K['kbh_fo']], 0)                      # fruit OBT comes via the assimilate pool
+    np.testing.assert_allclose(k[:, K['kba_fo']], plant.KBA_FO)
+    np.testing.assert_allclose(k[:, K['kbh_ba']], plant.TR_ASSIM)
     np.testing.assert_allclose(k[:, K['kbh_fh']], para_constant.KBH_FH)   # water stock constant: no growth flow
     k = transfer_rates('HTO', 'CEREAL', air, soil, plant, kbh_fh=np.log(2) / 2)
     np.testing.assert_allclose(k[:, K['kbh_fh']], np.log(2) / 2)

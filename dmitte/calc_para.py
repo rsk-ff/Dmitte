@@ -513,12 +513,13 @@ class Calc_plant(Calc_air):
         self.ETRM = ETRM * 3600.              # 此处 植物蒸腾速率 ETRM kg m-2 h-1
 
 
-    # 计算 HTO -> OBT 的生成速率 TROBT (茎叶) 和 TROBT_FRUIT (果实), h-1, 与干物质增长挂钩
-    # (IAEA-TECDOC-1991 Eq. 43):  dA_OBT/dt = ID_OBT * COMB_WATER * G(t) * C_leaf
-    # G 为干物质增长速率 (kg dm m-2 h-1), C_leaf = A_bh / W_bh 为叶片水比活度, COMB_WATER 把干物质折算为
-    # 燃烧水当量。茎叶 OBT 另补上周转 KBO_BH (kbo_bh) 的损失, 使长期均匀暴露下茎叶 OBT/TFWT 趋于 ID_OBT;
-    # 果实 OBT 只随果实 (籽粒/块茎) 干重增长生成。每日的生成量按逐时权重分配, 日总量不变: 白天正比于辐射,
-    # 夜间 (不依赖光的代谢途径) 为白天平均速率的 OBT_DARK 倍。
+    # 计算 HTO -> OBT 的生成与转运速率, h-1 (IAEA-TECDOC-1991 Eq. 43 的增长形式, 经叶片同化物库 ba):
+    #   TR_ASSIM  叶片水 -> 同化物 OBT: ID_OBT * COMB_CH2O * 总光合 (WOFOST PGASS) * C_leaf
+    #   KBA_BO / KBA_FO / KBA_BH  同化物以停留时间 TAU_ASSIM 流出, 按当天的干物质分配去向:
+    #       茎叶增长 -> bo, 果实 (籽粒/块茎) 增长 -> fo, 其余 (呼吸、根) 的氢回到叶片水
+    #   所以 bo、fo 得到的 OBT 通量 = ID_OBT * COMB_WATER * 干物质增长 * C_leaf (延迟约 TAU_ASSIM)
+    #   TROBT     叶片水 -> 茎叶 OBT, 补上周转 KBO_BH 的损失, 使长期均匀暴露下茎叶 OBT/TFWT 趋于 ID_OBT
+    # 每日的生成量按逐时权重分配, 日总量不变: 白天正比于辐射, 夜间 (不依赖光的代谢途径) 为白天平均速率的 OBT_DARK 倍。
     def calc_transOBT(self):
         day = pd.Series(self.PAR > 2, index=self.meteo.index)
         par = pd.Series(np.where(day, self.PAR, 0.0), index=self.meteo.index)
@@ -535,11 +536,22 @@ class Calc_plant(Calc_air):
 
         m_veg = np.nan_to_num(self.twlv + self.twst) / 1E4     # 茎叶干重, kg/m2
         m_fruit = np.nan_to_num(self.twso) / 1E4               # 果实干重, kg/m2
-        coef = para_constant.ID_OBT * para_constant.COMB_WATER * light
+        gpp = np.nan_to_num(np.asarray(self.Pco, dtype=np.float64)) / 1E4 / 24   # 总光合, kg CH2O m-2 h-1 (日均)
         w = np.asarray(self.plant_w, dtype=np.float64)
-        self.TROBT = np.divide(coef * (growth(m_veg) + para_constant.KBO_BH * m_veg), w,
-                               out=np.zeros_like(w), where=w > 0)
-        self.TROBT_FRUIT = np.divide(coef * growth(m_fruit), w, out=np.zeros_like(w), where=w > 0)
+        per_leaf_water = lambda flux: np.divide(flux, w, out=np.zeros_like(w), where=w > 0)
+        self.TR_ASSIM = per_leaf_water(para_constant.ID_OBT * para_constant.COMB_CH2O * gpp * light)
+        self.TROBT = per_leaf_water(para_constant.ID_OBT * para_constant.COMB_WATER * para_constant.KBO_BH * m_veg * light)
+
+        # 当天进入茎叶和果实的氢占总光合氢的份额
+        daily = lambda x: pd.Series(x, index=self.meteo.index).groupby(dates).transform('sum').values
+        h_gpp = para_constant.COMB_CH2O * daily(gpp)
+        share = lambda m: np.divide(para_constant.COMB_WATER * daily(growth(m)), h_gpp,
+                                    out=np.zeros_like(h_gpp), where=h_gpp > 0)
+        to_veg, to_fruit = share(m_veg), share(m_fruit)
+        excess = np.maximum(to_veg + to_fruit, 1.0)
+        to_veg, to_fruit = to_veg / excess, to_fruit / excess
+        k = 1 / para_constant.TAU_ASSIM
+        self.KBA_BO, self.KBA_FO, self.KBA_BH = to_veg * k, to_fruit * k, (1 - to_veg - to_fruit) * k
 
 
     # 计算植物水库室中的水含量plant_w 和 有机物含量plant_o;kg/m2; 

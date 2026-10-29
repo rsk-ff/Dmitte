@@ -2,7 +2,7 @@
 from dmitte.guassian import gaussian_puff_model
 from dmitte import run_wofost
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
-from dmitte.transfer_equotions import transfer_rates, solve_con
+from dmitte.transfer_equotions import A_INDEX, transfer_rates, solve_con
 from dmitte.para_constant import LAMBDA_T_H, DOSE_COEF_HTO, DOSE_COEF_OBT
 
 from plot_config import *
@@ -76,8 +76,8 @@ harvest_time = 2160
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_OBT + \
-                    (As[harvest_time, -2] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_HTO
+dose_adult_potato = (As[harvest_time, A_INDEX['fo']] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, A_INDEX['fh']] / yield_potato) * (200 / 1000 * 8 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 # %%
 dose_adult_air = int_con_T[0]
@@ -95,7 +95,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '土豆库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, -4:], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, [A_INDEX[c] for c in ('bh', 'bo', 'fh', 'fo')]], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
@@ -106,7 +106,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '所有库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:10], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(ncol=2, fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))

@@ -10,8 +10,11 @@ from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
 K_NAMES = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2',
            'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh',
            'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh', 'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh',
-           'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
+           'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh', 'kbh_ba', 'kba_bh', 'kba_bo', 'kba_fo']
 K_INDEX = {name: i for i, name in enumerate(K_NAMES)}
+# 库室顺序, 与 transfer_equotions() 的 y 一致; ba (叶片新鲜同化物 OBT) 放在最后, 前 10 个的编号不变
+A_NAMES = ['a1', 's0', 'a2', 's1', 's2', 's3', 'bh', 'bo', 'fh', 'fo', 'ba']
+A_INDEX = {name: i for i, name in enumerate(A_NAMES)}
 
 
 def leaf_exchange_rate(plantfx):
@@ -87,7 +90,7 @@ def _split_darcy(k_down, k_up, w_upper, w_lower):
 
 def _assemble(k_list, n_t_step, plantfx):
     '''
-    把各迁移率组装成 (n_t_step, 29) 的迁移率矩阵, 并处理还不存在的植物库室:
+    把各迁移率组装成 (n_t_step, len(K_NAMES)) 的迁移率矩阵, 并处理还不存在的植物库室:
     - 植物水量为 0 (出苗前) 的时刻, 进出植物和果实库室的迁移率都为 0;
     - 果实/块茎水量为 0 (形成前) 的时刻, 根系吸水全部进入植物水, 不向果实迁移。
     '''
@@ -99,9 +102,9 @@ def _assemble(k_list, n_t_step, plantfx):
     for layer in '123':
         to_bh, to_fh = K_INDEX['ks%s_bh' % layer], K_INDEX['ks%s_fh' % layer]
         k[no_fruit, to_bh] += k[no_fruit, to_fh]
-    fruit_rates = [K_INDEX[n] for n in ('ks1_fh', 'ks2_fh', 'ks3_fh', 'kbh_fh', 'kfh_bh', 'kbh_fo')]
+    fruit_rates = [K_INDEX[n] for n in ('ks1_fh', 'ks2_fh', 'ks3_fh', 'kbh_fh', 'kfh_bh', 'kbh_fo', 'kba_fo')]
     plant_rates = fruit_rates + [K_INDEX[n] for n in ('ks1_bh', 'ks2_bh', 'ks3_bh', 'ka2_bh', 'kbh_a2',
-                                                       'kbh_so', 'kbh_bo', 'kbo_bh')]
+                                                       'kbh_so', 'kbh_bo', 'kbo_bh', 'kbh_ba', 'kba_bh', 'kba_bo')]
     k[np.ix_(no_fruit, fruit_rates)] = 0
     k[np.ix_(no_plant, plant_rates)] = 0
     return k
@@ -138,14 +141,14 @@ def water_balance_residual(k_array, airfx, soilfx, plantfx, alpha=para_constant.
     '''
     k = np.array(k_array, dtype=np.float64, copy=True)
     n = len(k)
-    for name in ('kbh_bo', 'kbh_fo', 'kbo_bh'):
+    for name in ('kbh_bo', 'kbh_fo', 'kbo_bh', 'kbh_ba', 'kba_bh', 'kba_bo', 'kba_fo'):
         k[:, K_INDEX[name]] = 0
     k[:, K_INDEX['kbh_a2']] *= alpha
     W = {'a2': airfx.atm_h * 9, 's1': soilfx.soil1w, 's2': soilfx.soil2w, 's3': soilfx.soil3w,
          'bh': plantfx.plant_w, 'fh': plantfx.friut_w}
     W = {c: np.broadcast_to(np.asarray(w, dtype=np.float64), (n,)) for c, w in W.items()}
     zero = np.zeros(n)
-    y = [zero, zero, W['a2'], W['s1'], W['s2'], W['s3'], W['bh'], zero, W['fh'], zero]
+    y = [zero, zero, W['a2'], W['s1'], W['s2'], W['s3'], W['bh'], zero, W['fh'], zero, zero]
     dy = transfer_equotions(0, y, k.T, 0.0)
     position = {'s1': 3, 's2': 4, 's3': 5, 'bh': 6, 'fh': 8}
     outflows = {'s1': ('ks1_a2', 'ks1_bh', 'ks1_fh', 'ks1_s2'),
@@ -185,7 +188,7 @@ def transfer_rates(char: str,
 
     Return:
     ---
-    k_array: 迁移率矩阵, (小时数, 29), 列顺序见 K_NAMES
+    k_array: 迁移率矩阵, (小时数, len(K_NAMES)), 列顺序见 K_NAMES
     '''
     ka2_s1 = (soilfx.VDSO / airfx.ML * 3600) + (airfx.rainfall / 9) / airfx.atm_h
     ks3_s2 = ks3_s3 = 3.42E-4
@@ -221,14 +224,18 @@ def transfer_rates(char: str,
     else:
         raise ValueError("Unsupported char: '{}'.".format(char))
 
-    # fruit_share: 根系吸水中直接进入果实 (块茎) 的份额; None 表示没有果实库室
+    # OBT: 叶片水 -> 同化物库 ba -> 茎叶 bo / 果实 fo / 回到叶片水 (calc_transOBT); kbh_bo 只补茎叶 OBT 的周转。
+    # 果实 OBT 全部经同化物库生成, 不再从叶片水直接生成 (kbh_fo = 0)
     kbh_bo = plantfx.TROBT
+    kbh_fo = 0
+    kbh_ba, kba_bh, kba_bo, kba_fo = plantfx.TR_ASSIM, plantfx.KBA_BH, plantfx.KBA_BO, plantfx.KBA_FO
+    # fruit_share: 根系吸水中直接进入果实 (块茎) 的份额; None 表示没有果实库室
     if plant_type.upper() == 'LEAFY_PLANT':
-        fruit_share, kbh_fo = None, 0
+        fruit_share = None
     elif plant_type.upper() == 'CEREAL':
-        fruit_share, kbh_fo = 0, plantfx.TROBT_FRUIT
+        fruit_share = 0
     elif plant_type.upper() == 'ROOT_VEG':
-        fruit_share, kbh_fo = 1 / 6, plantfx.TROBT_FRUIT
+        fruit_share = 1 / 6
     else:
         raise ValueError("Unsupported plant type: '{}'.".format(plant_type))
 
@@ -238,7 +245,7 @@ def transfer_rates(char: str,
     k_list = [ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2,
               ka2_s1, ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh,
               ks3_bh, ka2_a2, kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh,
-              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh]
+              kbh_fh, kbh_fo, ks1_fh, ks2_fh, ks3_fh, kbh_ba, kba_bh, kba_bo, kba_fo]
 
     return _assemble(k_list, len(airfx.U10), plantfx)
 
@@ -253,11 +260,11 @@ def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
     transfer_rates: d-1 or h-1, 迁移率列表或向量
     LAMBDA_T: d-1 or h-1, 氚的衰变常数, 单位与迁移率保持一致
     '''
-    A_a1, A_s0, A_a2, A_s1, A_s2, A_s3, A_bh, A_bo, A_fh, A_fo = y
+    A_a1, A_s0, A_a2, A_s1, A_s2, A_s3, A_bh, A_bo, A_fh, A_fo, A_ba = y
     ka1_a1, ks0_a1, ka1_s0, ka1_a2, ks0_s1, ks0_s2, ks0_s3, ks1_a2, ka2_s1, \
         ks2_s1, ks1_s2, ks3_s2, ks2_s3, ks3_s3, ks1_bh, ks2_bh, ks3_bh, ka2_a2, \
         kbh_a2, ka2_bh, kbh_so, kbh_bo, kbo_bh, kfh_bh, kbh_fh, kbh_fo, ks1_fh, \
-        ks2_fh, ks3_fh = transfer_rates
+        ks2_fh, ks3_fh, kbh_ba, kba_bh, kba_bo, kba_fo = transfer_rates
 
     
     dA_a1_dt = ks0_a1 * A_s0 - (ka1_a1 + ka1_a2 + ka1_s0 + LAMBDA_T) * A_a1
@@ -266,12 +273,13 @@ def transfer_equotions(t, y, transfer_rates, LAMBDA_T: float):
     dA_s1_dt = ks0_s1 * A_s0 + ka2_s1 * A_a2 + ks2_s1 * A_s2 + kbh_so * A_bh - (ks1_a2 + ks1_bh + ks1_fh + ks1_s2 + LAMBDA_T) * A_s1
     dA_s2_dt = ks0_s2 * A_s0 + ks1_s2 * A_s1 + ks3_s2 * A_s3 - (ks2_s1 + ks2_bh + ks2_fh + ks2_s3 + LAMBDA_T) * A_s2
     dA_s3_dt = ks0_s3 * A_s0 + ks2_s3 * A_s2 - (ks3_s3 + ks3_bh + ks3_fh + ks3_s2 + LAMBDA_T) * A_s3
-    dA_bh_dt = ka2_bh * A_a2 + ks1_bh * A_s1 + ks2_bh * A_s2 + ks3_bh * A_s3 + kbo_bh * A_bo + kfh_bh * A_fh - (kbh_a2 + kbh_so + kbh_bo + kbh_fh + kbh_fo + LAMBDA_T) * A_bh
-    dA_bo_dt = kbh_bo * A_bh - (kbo_bh + LAMBDA_T) * A_bo
+    dA_bh_dt = ka2_bh * A_a2 + ks1_bh * A_s1 + ks2_bh * A_s2 + ks3_bh * A_s3 + kbo_bh * A_bo + kfh_bh * A_fh + kba_bh * A_ba - (kbh_a2 + kbh_so + kbh_bo + kbh_fh + kbh_fo + kbh_ba + LAMBDA_T) * A_bh
+    dA_bo_dt = kbh_bo * A_bh + kba_bo * A_ba - (kbo_bh + LAMBDA_T) * A_bo
     dA_fh_dt = ks1_fh * A_s1 + ks2_fh * A_s2 + ks3_fh * A_s3 + kbh_fh * A_bh - (kfh_bh + LAMBDA_T) * A_fh
-    dA_fo_dt = kbh_fo * A_bh - LAMBDA_T * A_fo
+    dA_fo_dt = kbh_fo * A_bh + kba_fo * A_ba - LAMBDA_T * A_fo
+    dA_ba_dt = kbh_ba * A_bh - (kba_bh + kba_bo + kba_fo + LAMBDA_T) * A_ba
 
-    return dA_a1_dt, dA_s0_dt, dA_a2_dt, dA_s1_dt, dA_s2_dt, dA_s3_dt, dA_bh_dt, dA_bo_dt, dA_fh_dt, dA_fo_dt
+    return dA_a1_dt, dA_s0_dt, dA_a2_dt, dA_s1_dt, dA_s2_dt, dA_s3_dt, dA_bh_dt, dA_bo_dt, dA_fh_dt, dA_fo_dt, dA_ba_dt
 
 
 def solve_con(char, init_con, k_array, LAMBDA_T):
@@ -287,9 +295,10 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
 
     Return:
     ---
-    As: 库室浓度矩阵
+    As: 库室浓度矩阵, (小时数 + 1, len(A_NAMES)), 列顺序见 A_NAMES
     '''
-    eye = np.eye(10)
+    n_comp = len(A_NAMES)
+    eye = np.eye(n_comp)
 
     def next_con(Ai, ki):
         '''
@@ -297,7 +306,7 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
         方程组对 A 线性, 一小时内迁移率不变, 所以一小时的解就是生成矩阵 (逐列取自 transfer_equotions) 的矩阵指数;
         果实形成初期等时刻迁移率可达 1e3-1e4 h-1, 显式 RK45 在这些时刻误差可达 100 %。
         '''
-        generator = np.column_stack([transfer_equotions(0, eye[j], ki, LAMBDA_T) for j in range(10)])
+        generator = np.column_stack([transfer_equotions(0, eye[j], ki, LAMBDA_T) for j in range(n_comp)])
         return expm(generator) @ Ai
     # Preserve caller-owned transfer rates; the first-step adjustments are solver-local.
     k_array = np.array(k_array, dtype=np.float64, copy=True)
@@ -307,10 +316,10 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
     k_array[0, 17] = 0
 
     n_t_step = len(k_array)
-    As = np.zeros((n_t_step + 1, 10))
+    As = np.zeros((n_t_step + 1, n_comp))
 
     if char == 'HT':
-        As[0] = [init_con, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        As[0, A_INDEX['a1']] = init_con
 
         As[1] = next_con(As[0], k_array[0])
 
@@ -321,7 +330,7 @@ def solve_con(char, init_con, k_array, LAMBDA_T):
             As[i + 1] = next_con(As[i], k_array[i])
 
     elif char == 'HTO':
-        As[0] = [0, 0, init_con, 0, 0, 0, 0, 0, 0, 0]
+        As[0, A_INDEX['a2']] = init_con
 
         As[1] = next_con(As[0], k_array[0])
 

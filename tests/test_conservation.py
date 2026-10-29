@@ -7,7 +7,7 @@ import pytest
 
 from dmitte import para_constant
 from dmitte.calc_para import Calc_plant
-from dmitte.transfer_equotions import (K_INDEX, K_NAMES, ROOT_LAYER_SHARE, _rate_of_change, _split_darcy,
+from dmitte.transfer_equotions import (A_INDEX, A_NAMES, K_INDEX, K_NAMES, ROOT_LAYER_SHARE, _rate_of_change, _split_darcy,
                                        check_rates, leaf_exchange_rate, net_transpiration, solve_con,
                                        transfer_equotions, transfer_rates, water_balance_residual)
 
@@ -27,7 +27,7 @@ def stub_state(n=4, friut_w=1.0, plant_w=2.0, rho_v=12.0):
     plant = SimpleNamespace(VDPF=1e-2 * ones, ROW=17.3 * ones, ETRM=0.2 * ones,
                             plant_w=plant_w * ones, plant_wh=0.11 * plant_w * ones,
                             friut_w=friut_w * ones, friut_wh=0.11 * friut_w * ones, TROBT=1e-4 * ones,
-                            TROBT_FRUIT=2e-4 * ones)
+                            TR_ASSIM=1e-3 * ones, KBA_BH=0.04 * ones, KBA_BO=0.02 * ones, KBA_FO=0.02 * ones)
     return air, soil, plant
 
 
@@ -47,7 +47,7 @@ def test_ode_loses_activity_only_through_external_sinks():
     for name in EXTERNAL_SINKS:
         rates[K_INDEX[name]] = 0
     for _ in range(5):
-        y = rng.random(10)
+        y = rng.random(len(A_NAMES))
         dy = transfer_equotions(0, y, rates, 0.0)
         assert sum(dy) == pytest.approx(0.0, abs=1e-12)
 
@@ -55,8 +55,8 @@ def test_ode_loses_activity_only_through_external_sinks():
 def test_plant_to_soil_transfer_lands_in_soil_layer_1():
     rates = np.zeros(len(K_NAMES))
     rates[K_INDEX['kbh_so']] = 0.1
-    y = np.zeros(10)
-    y[6] = 1.0                                         # A_bh
+    y = np.zeros(len(A_NAMES))
+    y[A_INDEX['bh']] = 1.0
     dy = transfer_equotions(0, y, rates, 0.0)
     assert dy[6] == pytest.approx(-0.1)
     assert dy[3] == pytest.approx(0.1)                 # A_s1
@@ -153,28 +153,37 @@ def growing_plant(days=3, dark=para_constant.OBT_DARK):
     plant.twst = np.full(len(idx), 1000.0)
     plant.twso = 1000 * np.clip(t, 0, 2)
     plant.plant_w = np.full(len(idx), 1.0)
+    plant.Pco = np.full(len(idx), 2500.0)               # gross assimilation, kg CH2O ha-1 d-1
     return plant, idx
 
 
-def test_obt_formation_follows_dry_matter_growth():
+def test_obt_formation_follows_gross_assimilation_and_growth():
     plant, idx = growing_plant()
     plant.calc_transOBT()
-    assert np.all(plant.TROBT >= 0) and np.all(plant.TROBT_FRUIT >= 0)
+    for rate in (plant.TROBT, plant.TR_ASSIM, plant.KBA_BH, plant.KBA_BO, plant.KBA_FO):
+        assert np.all(rate >= 0)
     day = idx.normalize()
+    k_out = plant.KBA_BH + plant.KBA_BO + plant.KBA_FO
+    np.testing.assert_allclose(k_out, 1 / para_constant.TAU_ASSIM)
+    # leaf water -> assimilate OBT: ID * combustion water of CH2O * gross assimilation (per unit leaf HTO)
+    formed = pd_sum(plant.TR_ASSIM * plant.plant_w, day)
+    gpp = 2500 / 1e4                                    # kg CH2O m-2 d-1
+    np.testing.assert_allclose(formed, para_constant.ID_OBT * para_constant.COMB_CH2O * gpp, rtol=1e-9)
+    # of that, the fruit receives ID * combustion water * fruit growth, the shoot ID * combustion water * shoot growth
     coef = para_constant.ID_OBT * para_constant.COMB_WATER
-    # daily OBT formed in the fruit = ID * combustion water * daily fruit growth (per unit leaf HTO concentration)
-    formed = pd_sum(plant.TROBT_FRUIT * plant.plant_w, day)
     one_hour = coef * 0.1 / 24                          # the hourly growth rate is smeared over the hour of change
-    np.testing.assert_allclose(formed, coef * np.array([0.1, 0.1, 0.0]), rtol=0.05, atol=one_hour)
-    # shoot: growth plus replacement of the turned-over OBT; senescence does not destroy OBT
+    to_fruit = pd_sum(plant.TR_ASSIM * plant.plant_w * plant.KBA_FO / k_out, day)
+    np.testing.assert_allclose(to_fruit, coef * np.array([0.1, 0.1, 0.0]), rtol=0.05, atol=one_hour)
+    to_shoot = pd_sum(plant.TR_ASSIM * plant.plant_w * plant.KBA_BO / k_out, day)
+    np.testing.assert_allclose(to_shoot, coef * np.array([0.05, 0.0, 0.0]), rtol=0.05, atol=one_hour)
+    # direct leaf water -> shoot OBT only replaces the turned-over OBT; senescence does not destroy OBT
     m_veg = (plant.twlv + plant.twst) / 1e4
-    turnover = pd_sum(para_constant.KBO_BH * m_veg, day)
     np.testing.assert_allclose(pd_sum(plant.TROBT * plant.plant_w, day),
-                               coef * (np.array([0.05, 0.0, 0.0]) + turnover), rtol=0.05, atol=one_hour)
+                               coef * pd_sum(para_constant.KBO_BH * m_veg, day), rtol=0.05)
     # night formation is OBT_DARK times the mean daylight rate
     is_day = plant.PAR > 2
     d1 = day == day[0]
-    ratio = plant.TROBT_FRUIT[d1 & ~is_day].mean() / plant.TROBT_FRUIT[d1 & is_day].mean()
+    ratio = plant.TR_ASSIM[d1 & ~is_day].mean() / plant.TR_ASSIM[d1 & is_day].mean()
     assert ratio == pytest.approx(para_constant.OBT_DARK, rel=1e-6)
 
 
@@ -183,16 +192,25 @@ def pd_sum(values, day):
     return pd.Series(values).groupby(day).sum().values
 
 
-def test_chronic_shoot_obt_reaches_discrimination_factor():
-    # leaf water held at a constant concentration: shoot OBT / combustion water -> ID_OBT * C_leaf
+def test_chronic_obt_reaches_discrimination_factor():
+    # leaf water held at a constant concentration: shoot and fruit OBT / combustion water -> ID_OBT * C_leaf
     plant, idx = growing_plant(days=60)
-    plant.twlv = np.full(len(idx), 2500.0)
+    days = np.arange(len(idx)) / 24
+    plant.twlv = 2500.0 + 50.0 * days                   # shoot and fruit grow all season
+    plant.twso = 100.0 * days                           # (OBT is assigned on the day it leaves the pool)
     plant.calc_transOBT()
-    c_leaf, a_bo = 1.0, 0.0
-    m_veg = (plant.twlv + plant.twst) / 1e4
+    c_leaf, a_ba, a_bo, a_fo = 1.0, 0.0, 0.0, 0.0
+    # dry matter formed under exposure; with structural turnover (KBO_BH) the shoot OBT also replaces the old dry matter
+    m_veg = (plant.twlv + plant.twst - (plant.twlv[0] + plant.twst[0]) * (para_constant.KBO_BH == 0)) / 1e4
     for i in range(len(idx)):
-        a_bo += plant.TROBT[i] * plant.plant_w[i] * c_leaf - para_constant.KBO_BH * a_bo
+        to_ba = plant.TR_ASSIM[i] * plant.plant_w[i] * c_leaf
+        out = (plant.KBA_BH[i] + plant.KBA_BO[i] + plant.KBA_FO[i]) * a_ba
+        a_bo += plant.TROBT[i] * plant.plant_w[i] * c_leaf + plant.KBA_BO[i] * a_ba - para_constant.KBO_BH * a_bo
+        a_fo += plant.KBA_FO[i] * a_ba
+        a_ba += to_ba - out
     assert a_bo / (para_constant.COMB_WATER * m_veg[-1]) == pytest.approx(para_constant.ID_OBT, rel=0.05)
+    m_fruit = plant.twso[-1] / 1e4
+    assert a_fo / (para_constant.COMB_WATER * m_fruit) == pytest.approx(para_constant.ID_OBT, rel=0.05)
 
 
 @pytest.mark.parametrize('rate_fn', SYMMETRIC, ids=RATE_IDS)

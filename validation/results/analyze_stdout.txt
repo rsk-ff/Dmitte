@@ -1,42 +1,42 @@
 test split: 15 benchmarks, 4 datasets, fingerprint 067765dc47f5 (unchanged)
 ==== calibration benchmarks
-benchmark   crop   match variant                     metric       bench                  model    verdict  factor_off
-       B1 potato   proxy   model                    R0_leaf       22–46         25.1 [13–45.1] consistent    1.000000
-      B10 potato   proxy   model           tfwt_drop_edible   0–1.3e+04         14.1 [1–3e+03] consistent    1.000000
-      B13 potato   proxy   model                 TLI_edible   0.11–0.33   0.131 [0.0049–0.429] consistent    1.000000
-      B56 potato    crop   model                 k_exchange    0.5–1.12     0.581 [0.252–1.03] consistent    1.000000
-      B57 potato    crop   model                 k_exchange  0.187–0.42    0.234 [0.138–0.352] consistent    1.000000
-      B58 potato    crop   model                 k_exchange   0.933–2.1     0.581 [0.252–1.03]      close    1.607585
-       B6 potato general   model           k_day_over_night         3–5       2.66 [0.72–3.64]      close    1.128992
-      B15 potato general   model         obt_night_over_day     0.1–0.5     0.557 [0.35–0.988]      close    1.113623
-      B18 potato    crop   model       chronic_OBT_over_air   0.72–1.14      0.904 [0.9–0.995] consistent    1.000000
-      B19 potato    crop   model      chronic_TFWT_over_air   0.57–1.83       1.45 [1.27–1.61] consistent    1.000000
-      B20 potato general   model chronic_leaf_OBT_over_TFWT    0.64–1.3    0.802 [0.731–0.803] consistent    1.000000
-       B4  wheat    crop   model          R0_night_over_day 0.167–0.375    0.349 [0.337–0.351] consistent    1.000000
-      B49  wheat    crop   model                    R0_leaf       54–92       60.3 [53.2–67.5] consistent    1.000000
-      B50  wheat    crop   model                    R0_leaf       17–19       20.5 [17.5–24.7]      close    1.080046
-       B5  wheat    crop   model                 k_exchange   0.85–1.66     0.778 [0.538–1.23]      close    1.092318
-      B29  wheat    crop   model                 k_exchange   0.24–0.38    0.189 [0.143–0.247]      close    1.271488
-      B59  wheat    crop   model                 k_exchange  0.553–1.24     0.504 [0.27–0.856]      close    1.097914
-      B60  wheat    crop   model                 k_exchange   0.1–0.225    0.169 [0.105–0.251] consistent    1.000000
-       B6  wheat general   model           k_day_over_night         3–5       2.84 [2.36–4.03]      close    1.055290
-      B22  wheat    crop   model          obt_end_over_leaf   0.91–1.59    0.265 [0.141–0.485]        off    3.434897
-      B23  wheat    crop   model          obt_end_over_leaf   0.33–0.43 0.0404 [0.0393–0.0416]        off    8.174118
-      B15  wheat general   model         obt_night_over_day     0.1–0.5     0.747 [0.485–1.08]      close    1.494407
-      B26  wheat    crop   model                 TLI_edible   0.18–0.32    0.305 [0.158–0.505] consistent    1.000000
-       B9  wheat   proxy   model             tfwt_drop_leaf 600–9.5e+04 3.8e+03 [700–6.39e+04] consistent    1.000000
-      B20  wheat general   model chronic_leaf_OBT_over_TFWT    0.64–1.3    0.675 [0.675–0.675] consistent    1.000000
+benchmark   crop   match variant                     metric       bench                        model    verdict  factor_off
+       B1 potato   proxy   model                    R0_leaf       22–46               25.1 [13–45.2] consistent    1.000000
+      B10 potato   proxy   model           tfwt_drop_edible   0–1.3e+04            14.1 [1–3.01e+03] consistent    1.000000
+      B13 potato   proxy   model                 TLI_edible   0.11–0.33        0.131 [0.00512–0.421] consistent    1.000000
+      B56 potato    crop   model                 k_exchange    0.5–1.12           0.581 [0.252–1.03] consistent    1.000000
+      B57 potato    crop   model                 k_exchange  0.187–0.42          0.234 [0.138–0.352] consistent    1.000000
+      B58 potato    crop   model                 k_exchange   0.933–2.1           0.581 [0.252–1.03]      close    1.607585
+       B6 potato general   model           k_day_over_night         3–5             2.66 [0.72–3.64]      close    1.128992
+      B15 potato general   model         obt_night_over_day     0.1–0.5           0.608 [0.271–1.14]      close    1.215273
+      B18 potato    crop   model       chronic_OBT_over_air   0.72–1.14          0.906 [0.902–0.999] consistent    1.000000
+      B19 potato    crop   model      chronic_TFWT_over_air   0.57–1.83             1.45 [1.27–1.61] consistent    1.000000
+      B20 potato general   model chronic_leaf_OBT_over_TFWT    0.64–1.3          0.572 [0.566–0.628]      close    1.118245
+       B4  wheat    crop   model          R0_night_over_day 0.167–0.375          0.349 [0.337–0.351] consistent    1.000000
+      B49  wheat    crop   model                    R0_leaf       54–92             60.3 [53.2–67.6] consistent    1.000000
+      B50  wheat    crop   model                    R0_leaf       17–19             20.5 [17.5–24.7]      close    1.080174
+       B5  wheat    crop   model                 k_exchange   0.85–1.66           0.777 [0.536–1.23]      close    1.093984
+      B29  wheat    crop   model                 k_exchange   0.24–0.38          0.188 [0.143–0.247]      close    1.273415
+      B59  wheat    crop   model                 k_exchange  0.553–1.24           0.504 [0.27–0.856]      close    1.097914
+      B60  wheat    crop   model                 k_exchange   0.1–0.225          0.169 [0.105–0.251] consistent    1.000000
+       B6  wheat general   model           k_day_over_night         3–5             2.84 [2.36–4.03]      close    1.055290
+      B22  wheat    crop   model          obt_end_over_leaf   0.91–1.59           0.663 [0.417–1.13]      close    1.372077
+      B23  wheat    crop   model          obt_end_over_leaf   0.33–0.43          0.127 [0.071–0.161]        off    2.595325
+      B15  wheat general   model         obt_night_over_day     0.1–0.5            0.763 [0.336–2.2]      close    1.526965
+      B26  wheat    crop   model                 TLI_edible   0.18–0.32          0.301 [0.156–0.485] consistent    1.000000
+       B9  wheat   proxy   model             tfwt_drop_leaf 600–9.5e+04 1.03e+04 [2.24e+03–1.33e+05] consistent    1.000000
+      B20  wheat general   model chronic_leaf_OBT_over_TFWT    0.64–1.3          0.677 [0.677–0.677] consistent    1.000000
 field-box benchmarks scored on the driven runs (RAM+RB 15 s/m); median with box RAM+RB 8 and 30 s/m:
 benchmark            metric  model_median  model_median_box8  model_median_box30
-       B4 R0_night_over_day         0.349              0.345               0.359
+       B4 R0_night_over_day         0.349              0.345               0.358
       B49           R0_leaf          60.3               63.8                54.7
-      B50           R0_leaf          20.5               21.3                  19
-       B5        k_exchange         0.778              0.778               0.778
-      B29        k_exchange         0.189              0.189               0.189
-      B22 obt_end_over_leaf         0.265              0.269               0.258
-      B23 obt_end_over_leaf        0.0404             0.0404              0.0403
-      B26        TLI_edible         0.305              0.305               0.306
+      B50           R0_leaf          20.5               21.3                19.1
+       B5        k_exchange         0.777              0.777               0.777
+      B29        k_exchange         0.188              0.188               0.188
+      B22 obt_end_over_leaf         0.663              0.675               0.645
+      B23 obt_end_over_leaf         0.127              0.127               0.127
+      B26        TLI_edible         0.301              0.301               0.301
 verdict         close  consistent  off
 crop   variant                        
-potato model        3           8    0
-wheat  model        6           6    2
+potato model        4           7    0
+wheat  model        7           6    1

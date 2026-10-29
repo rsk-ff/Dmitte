@@ -109,7 +109,7 @@ def run_exposure(k, pools, i0, shape):
     M[:, rv.A_A2, :] = 0                       # air is a boundary condition
     P_sub = expm(M[0] / SUBSTEPS)
     P = expm(M[1:])
-    y = np.zeros(10)
+    y = np.zeros(rv.N_COMP)
     ys = [y.copy()]
     for c in shape:
         y[rv.A_A2] = pools['w_air'][i0] * c
@@ -127,7 +127,7 @@ def metrics(ys, pools, i0):
     n = len(pools['w_plant'])
     leaf = lambda j: ys[j, rv.A_BH] / pools['w_plant'][min(i0 + j, n - 1)]
     c_end = leaf(1)
-    obt = lambda j: 100 * ys[j, rv.A_BO] / pools['comb_body'][min(i0 + j, n - 1)] / c_end
+    obt = lambda j: 100 * rv.leaf_obt_conc(ys[j], pools, min(i0 + j, n - 1)) / c_end
     hv = len(ys) - 1
     return dict(R0_leaf=100 * c_end,
                 k_after=np.log(leaf(1) / leaf(2)),

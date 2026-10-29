@@ -40,7 +40,7 @@ warnings.filterwarnings('ignore')
 from dmitte import calc_para, run_wofost  # noqa: E402
 from dmitte.calc_para import Calc_air, Calc_plant, Calc_soil  # noqa: E402
 from dmitte.para_constant import ALF_HTO, COMB_WATER, LAMBDA_T_H  # noqa: E402
-from dmitte.transfer_equotions import (solve_con, transfer_equotions, transfer_rates,  # noqa: E402
+from dmitte.transfer_equotions import (A_INDEX, K_INDEX, K_NAMES, solve_con, transfer_equotions, transfer_rates,  # noqa: E402
                                        water_balance_residual)
 
 OUT = os.path.join(ROOT, 'validation', 'results')
@@ -48,8 +48,9 @@ LAT = 51.97                   # Wageningen
 STABILITY, HEG, X = 4, 20, 1000   # irrelevant for clamped-air experiments, required by Calc_air
 EXPOSURE_HOURS = (1, 2)           # field-box experiments are 1 h, chamber experiments (potato, wheat) 2 h
 
-# compartment order of transfer_equotions
-A_A2, A_S1, A_BH, A_BO, A_FH, A_FO = 2, 3, 6, 7, 8, 9
+# compartment order of transfer_equotions (ba: leaf assimilate OBT)
+A_A2, A_S1, A_BH, A_BO, A_FH, A_FO, A_BA = (A_INDEX[c] for c in ('a2', 's1', 'bh', 'bo', 'fh', 'fo', 'ba'))
+N_COMP = len(A_INDEX)
 
 VARIANTS = {'model': transfer_rates}    # name -> rate function; add entries to compare model options
 
@@ -122,10 +123,10 @@ def model_state(crop, year, forcing):
 def generators(k_array):
     """Hourly 10x10 generators of transfer_equotions (linear in y)."""
     n = len(k_array)
-    M = np.zeros((n, 10, 10))
-    eye = np.eye(10)
+    M = np.zeros((n, N_COMP, N_COMP))
+    eye = np.eye(N_COMP)
     for i in range(n):
-        for j in range(10):
+        for j in range(N_COMP):
             M[i, :, j] = transfer_equotions(0, eye[j], k_array[i], LAMBDA_T_H)
     return M
 
@@ -144,7 +145,7 @@ def check_against_solve_con(k_array):
     k0 = k.copy()
     k0[0, 0] = k0[0, 17] = 0
     As_ref = solve_con('HTO', 1.0, k, LAMBDA_T_H)
-    y = np.zeros(10)
+    y = np.zeros(N_COMP)
     y[A_A2] = 1.0
     out = [y]
     Ms = generators(k0)
@@ -165,14 +166,21 @@ def season_arrays(air, soil, plant):
     dm_body = np.maximum(plant.tagp - plant.twso, 0) / 1e4
     dm_edible = plant.twso / 1e4
     return dict(w_air=w_air, w_plant=plant.plant_w, w_fruit=plant.friut_w,
-                comb_body=dm_body * COMB_WATER, comb_edible=dm_edible * COMB_WATER)
+                comb_body=dm_body * COMB_WATER, comb_edible=dm_edible * COMB_WATER,
+                comb_leaf=plant.leaf_dm * COMB_WATER)
+
+
+def leaf_obt_conc(y, pools, i):
+    """Leaf OBT per combustion water: assimilate OBT in living leaves plus structural OBT of the shoot."""
+    assim = y[A_BA] / pools['comb_leaf'][i] if pools['comb_leaf'][i] > 0 else 0.0
+    return assim + safe_div(y[A_BO], pools['comb_body'][i])
 
 
 def run_clamped(P, w_air, i0, i1):
     """Propagate with air held at concentration 1 (Bq per kg air moisture) for hours [i0, i1)."""
     n = len(P)
-    ys = np.zeros((n + 1, 10))
-    y = np.zeros(10)
+    ys = np.zeros((n + 1, N_COMP))
+    y = np.zeros(N_COMP)
     for i in range(i0, n):
         y[A_A2] = w_air[i] if i < i1 else 0.0
         y = P[i] @ y
@@ -230,23 +238,23 @@ def acute_metrics(ys, i0, i1, pools, k):
     hv = len(ys) - 1
     c_leaf = lambda i: safe_div(ys[i, A_BH], pools['w_plant'][min(i, hv - 1)])
     c_fruit_tfwt = lambda i: safe_div(ys[i, A_FH], pools['w_fruit'][min(i, hv - 1)])
-    obt_total_conc = safe_div(ys[h0, A_BO] + ys[h0, A_FO],
+    obt_total_conc = safe_div(ys[h0, A_BO] + ys[h0, A_FO] + ys[h0, A_BA],
                               pools['comb_body'][i0] + pools['comb_edible'][i0])
-    obt_leaf_conc = safe_div(ys[h0, A_BO], pools['comb_body'][min(h0, hv - 1)])
-    plant_t = ys[:, [A_BH, A_BO, A_FH, A_FO]]
+    obt_leaf_conc = leaf_obt_conc(ys[h0], pools, min(h0, hv - 1))
+    plant_t = ys[:, [A_BH, A_BO, A_FH, A_FO, A_BA]]
     i24 = min(h0 + 24, hv)
     return dict(
         R0_leaf=100 * c_leaf(h0),
-        k_exchange=k[i0, 18],                                   # kbh_a2, leaf -> air
-        k_out_leaf=k[i0, [18, 20, 21, 24, 25]].sum(),           # all losses from bh
+        k_exchange=k[i0, K_INDEX['kbh_a2']],                    # leaf -> air
+        k_out_leaf=k[i0, [K_INDEX[n] for n in ('kbh_a2', 'kbh_so', 'kbh_bo', 'kbh_fh', 'kbh_fo', 'kbh_ba')]].sum(),
         tfwt_drop_leaf=safe_div(c_leaf(h0), c_leaf(hv)),
         # edible-part TFWT keeps rising after h0 while it is fed from the shoot, so use its peak
         tfwt_drop_edible=safe_div(np.nanmax([c_fruit_tfwt(i) for i in range(h0, hv + 1)]), c_fruit_tfwt(hv)),
         TLI_edible=100 * safe_div(safe_div(ys[hv, A_FO], pools['comb_edible'][hv - 1]), c_leaf(h0)),
         obt_end_over_air=100 * obt_total_conc,
         obt_end_over_leaf=100 * safe_div(obt_leaf_conc, c_leaf(h0)),
-        obt_share_24h=100 * safe_div(plant_t[i24, [1, 3]].sum(), plant_t[i24].sum()),
-        obt_formed_24h_per_leaf_h0=safe_div(ys[i24, A_BO] + ys[i24, A_FO], ys[h0, A_BH]),
+        obt_share_24h=100 * safe_div(plant_t[i24, [1, 3, 4]].sum(), plant_t[i24].sum()),
+        obt_formed_24h_per_leaf_h0=safe_div(ys[i24, A_BO] + ys[i24, A_FO] + ys[i24, A_BA], ys[h0, A_BH]),
         min_inventory=float(ys.min()),
     )
 
@@ -257,7 +265,7 @@ def chronic_metrics(ys, pools):
         chronic_OBT_over_air=safe_div(ys[hv, A_FO], pools['comb_edible'][hv - 1]),
         chronic_TFWT_over_air=safe_div(ys[hv, A_FH], pools['w_fruit'][hv - 1]),
         chronic_leaf_TFWT_over_air=safe_div(ys[hv, A_BH], pools['w_plant'][hv - 1]),
-        chronic_leaf_OBT_over_TFWT=safe_div(safe_div(ys[hv, A_BO], pools['comb_body'][hv - 1]),
+        chronic_leaf_OBT_over_TFWT=safe_div(leaf_obt_conc(ys[hv], pools, hv - 1),
                                             safe_div(ys[hv, A_BH], pools['w_plant'][hv - 1])),
     )
 
@@ -320,10 +328,6 @@ def main():
     diag.to_csv(os.path.join(OUT, 'diagnostics.csv'), index=False)
     print(diag.groupby(['crop', 'variant', 'forcing'])[['nonfinite_rates', 'negative_rates']].sum())
 
-
-K_NAMES = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3', 'ks1_a2', 'ka2_s1', 'ks2_s1',
-           'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh',
-           'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
 
 if __name__ == '__main__':
     main()

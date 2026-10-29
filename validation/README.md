@@ -11,6 +11,7 @@ validation/
 ├── analyze.py                              # 与文献基准对比，输出表格和图
 ├── calibrate_night_resistance.py           # 在校准集上标定夜间气孔阻力系数 RC_NIGHT
 ├── scenario_field_box.py                   # 按情景卡用实测条件驱动小麦田间箱实验（第 4.4 节）
+├── calibrate_assimilate_residence.py       # 在田间箱叶片 OBT 时间过程上标定同化物停留时间 TAU_ASSIM（第 4.5 节）
 └── results/                                # 运行结果（CSV、图）
 ```
 
@@ -21,22 +22,22 @@ validation/
 每一处的单独效果见第 4.1 节。之后原来的 default、baomi、Korea、morris 四个迁移率变体合并成一个 `transfer_rates`，
 UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上标定了夜间气孔阻力系数 `RC_NIGHT`（15 → 4，第 4.2 节）。
 小麦田间箱的 8 条基准改用逐次实测条件驱动的结果评分（第 4.4 节），`RC_NIGHT` 也在这些结果上重新标定（仍为 4）。
-下面的结果都是合并、标定后的模型。
+最后加入了叶片新鲜同化物 OBT 库，去掉了茎叶结构 OBT 的周转（第 4.5 节）。下面的结果都是这一版模型。
 
 | 结论 | 依据（校准集） |
 |---|---|
 | 迁移率全部有限且非负；植物水和果实水的水量平衡闭合 | 负值和非有限值为 0；均匀比活度检验中植物水、果实水的未解释残差为 0（修正前 0.5–160，第 4.3 节） |
-| **马铃薯的校准基准没有 ❌** | 慢性块茎 OBT/空气 0.90（0.72–1.14，B18）；块茎 TFWT/空气 1.45（0.57–1.83，B19）；叶片 OBT/TFWT 0.80（0.64–1.3，B20）；根茎代理 TLI 0.13 %（0.11–0.33 %，B13）；白天交换 0.58 h⁻¹（0.5–1.1，B56）；夜间交换 0.23 h⁻¹（0.19–0.42，B57）。修正前块茎 OBT/空气 16、TLI 6.6 %、交换 0.064 h⁻¹ |
+| **马铃薯的校准基准没有 ❌** | 慢性块茎 OBT/空气 0.90（0.72–1.14，B18）；块茎 TFWT/空气 1.45（0.57–1.83，B19）；叶片 OBT/TFWT 0.57（0.64–1.3，B20 ⚠️）；根茎代理 TLI 0.13 %（0.11–0.33 %，B13）；白天交换 0.58 h⁻¹（0.5–1.1，B56）；夜间交换 0.23 h⁻¹（0.19–0.42，B57）。修正前块茎 OBT/空气 16、TLI 6.6 %、交换 0.064 h⁻¹ |
 | 小麦田间箱的吸收在实测条件下符合 | 实测条件驱动、箱内阻力 15 s/m：白天暴露结束时叶片 TFWT/空气 60 %（54–92 %，B49 ✅），夜间 21 %（17–19 %，B50 ⚠️），夜/昼比 0.35（0.17–0.38，B4 ✅）；14 次中 13 次在 2 倍以内。通用虚拟实验白天只有 25 %，差别来自箱内条件和通风（第 4.4 节） |
 | 叶–气交换速率接近文献 | 田间箱暴露后 1 h 内：白天 0.78 h⁻¹（0.85–1.66，B5 ⚠️），夜间 0.19 h⁻¹（0.24–0.38，B29 ⚠️）；小麦温室夜间 0.17 h⁻¹（0.10–0.23，B60 ✅）；昼/夜交换比 2.7–2.8（3–5，B6 ⚠️） |
 | 小麦籽粒 TLI 在文献范围内 | 实测条件驱动 0.31 %（0.18–0.32 %，B26 ✅）；修正前 0.025–0.065 % |
-| **暴露结束时叶片 OBT 偏低** | 白天 0.26 %（0.91–1.59 %，B22），夜间 0.04 %（0.33–0.43 %，B23）。模型没有“新鲜同化物”库（第 5.2 节 2） |
+| **暴露结束时叶片 OBT 仍偏低** | 加入叶片同化物库后白天 0.66 %（0.91–1.59 %，B22 ⚠️；加库前 0.26 %），夜间 0.13 %（0.33–0.43 %，B23 ❌；加库前 0.04 %）（第 4.5 节） |
 | 黎明和黄昏的气孔响应不对 | 实测条件驱动：暴露后 1 h 内叶片 TFWT 损失速率黎明 0.32 h⁻¹（0.69–1.04），黄昏 0.37 h⁻¹（0.06–0.18）；白天 0.78（0.85–1.66）、夜间 0.19（0.24–0.38）接近（第 4.4 节） |
-| 叶片 OBT 的时间过程不对 | 模型 / 实测：1 h 0.11，2 h 0.28，4 h 0.78，1 d 2.7。生成太慢、留存太久，与缺少新鲜同化物库一致（第 4.4 节） |
+| 叶片 OBT 的时间过程仍不对 | 模型 / 实测：1 h 0.31，2 h 0.74，4 h 1.6，1 d 0.36（加库前 0.11、0.28、0.78、2.7）。模型在暴露后 1–3 h 还在生成 OBT，实测在暴露结束时已基本形成（第 4.5 节） |
 
 判定数从修正前的 马铃薯 1/0/10、小麦 3/2/9（✅/⚠️/❌，原 baomi 变体）变为三步修正后的 马铃薯 6/3/2、小麦 2/6/6，
 标定夜间阻力后为 马铃薯 8/3/0、小麦 3/8/3，田间箱基准改用实测条件驱动的结果评分后小麦为 6/6/2。
-剩下的 2 个 ❌ 都是暴露结束时的叶片 OBT（B22、B23）。
+加入叶片同化物库后为 马铃薯 7/4/0、小麦 6/7/1，剩下的 1 个 ❌ 是夜间暴露结束时的叶片 OBT（B23）。
 
 ## 2 数据
 
@@ -78,8 +79,8 @@ UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上�
    用日数据生成逐时强迫（温度在 TMIN/TMAX 间余弦变化、辐射按太阳高度角分配、RH 由逐时温度计算），通过替换
    `calc_para.meteodata` 注入。同时也用仓库原始的逐日插值强迫跑了一遍（结果见 CSV 中 `forcing=daily`）。
 4. **浓度换算**：叶片 TFWT = `A_bh / plant_w`（`plant_w` 为活叶片水，第 5.1 节第三步）；块茎/籽粒 TFWT = `A_fh / friut_w`；
-   OBT 以燃烧水计，= OBT 库存 / (干物质 × `COMB_WATER` = 0.556 L/kg)（淀粉/纤维素含氢 6.2 %），
-   植物 OBT 的干物质为茎叶（TWLV + TWST）；空气水汽量 = `ML × a_h`。
+   OBT 以燃烧水计，= OBT 库存 / (干物质 × `COMB_WATER` = 0.556 L/kg)（淀粉/纤维素含氢 6.2 %）；
+   叶片 OBT = 叶片同化物 OBT（`ba`）/ 活叶干物质 + 茎叶结构 OBT（`bo`）/ 茎叶干物质（TWLV + TWST）；空气水汽量 = `ML × a_h`。
 5. **判定**：取模型中位数（全部年份 × 暴露日期，逐时强迫），落在文献范围内为 ✅ 符合；与范围相差 2 倍以内为 ⚠️ 接近
    （TECDOC-1738 §7.9：模型与实验之间的差异至少为 2 倍，实验误差至少 50 %）；超过 2 倍为 ❌ 偏离；
    ≤0 或发散（|log₁₀| > 30）为 ⛔ 非物理。只给中心值的基准按 ×/÷1.5 作为容差。
@@ -96,7 +97,7 @@ UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上�
 
 ## 4 结果
 
-完整表见 `results/benchmark_comparison.csv`（含 5–95 % 分位）。下表为校准集各项的模型中位数与判定（合并、标定 `RC_NIGHT = 4` 之后；田间箱基准用实测条件驱动的结果）。
+完整表见 `results/benchmark_comparison.csv`（含 5–95 % 分位）。下表为校准集各项的模型中位数与判定（当前模型：含叶片同化物库，`RC_NIGHT = 4`；田间箱基准用实测条件驱动的结果）。
 “匹配”列：本作物 = 同一作物的实验；代理 = 其他作物（马铃薯用萝卜、小麦用水稻）；通用 = 多作物汇总值。
 
 | 基准 | 作物 | 文献指标 | 实验作物与类型 | 匹配 | 模型 | 文献 |
@@ -108,11 +109,11 @@ UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上�
 | B57 | 马铃薯 | leaf TFWT fast loss rate constant k1 after night exposure | potato；greenhouse | 本作物 | 0.23 ✅ | 0.19–0.42 h-1 |
 | B58 | 马铃薯 | leaf HTO uptake rate constant (day) | potato；greenhouse | 本作物 | 0.58 ⚠️ | 0.93–2.1 h-1 |
 | B6 | 马铃薯 | day/night ratio of leaf HTO uptake rate | most crops (not young lettuce)；review | 通用 | 2.7 ⚠️ | 3–5 - |
-| B15 | 马铃薯 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 0.56 ⚠️ | 0.1–0.5 - |
-| B18 | 马铃薯 | fruit/tuber OBT (Bq/L comb. water) / air HTO (Bq/L) averaged at pod filling | tomato, pepper, potato (pooled)；field | 本作物 | 0.9 ✅ | 0.72–1.1 - |
+| B15 | 马铃薯 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 0.61 ⚠️ | 0.1–0.5 - |
+| B18 | 马铃薯 | fruit/tuber OBT (Bq/L comb. water) / air HTO (Bq/L) averaged at pod filling | tomato, pepper, potato (pooled)；field | 本作物 | 0.91 ✅ | 0.72–1.1 - |
 | B19 | 马铃薯 | fruit/tuber HTO / air HTO averaged 3 d before harvest | tomato, pepper, potato (pooled)；field | 本作物 | 1.5 ✅ | 0.57–1.8 - |
-| B20 | 马铃薯 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.8 ✅ | 0.64–1.3 - |
-| B4 | 小麦 | night/day ratio of leaf HTO uptake | wheat；field box | 本作物（实测条件驱动） | 0.35 ✅（0.35–0.36） | 0.17–0.38 - |
+| B20 | 马铃薯 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.57 ⚠️ | 0.64–1.3 - |
+| B4 | 小麦 | night/day ratio of leaf HTO uptake | wheat；field box | 本作物（实测条件驱动） | 0.35 ✅（0.34–0.36） | 0.17–0.38 - |
 | B49 | 小麦 | leaf TFWT / air-moisture HTO at end of 1 h exposure (day) | wheat；field box | 本作物（实测条件驱动） | 60 ✅（55–64） | 54–92 % |
 | B50 | 小麦 | leaf TFWT / air-moisture HTO at end of 1 h exposure (night) | wheat；field box | 本作物（实测条件驱动） | 21 ⚠️（19–21） | 17–19 % |
 | B5 | 小麦 | leaf TFWT loss rate constant within 1 h after daytime exposure | wheat；field box | 本作物（实测条件驱动） | 0.78 ⚠️（0.78–0.78） | 0.85–1.7 h-1 |
@@ -120,14 +121,14 @@ UFOTRI 常数变体删除（第 5.1 节“合并”）；然后在校准集上�
 | B59 | 小麦 | leaf TFWT fast loss rate constant k1 after daytime exposure | wheat；greenhouse | 本作物 | 0.5 ⚠️ | 0.55–1.2 h-1 |
 | B60 | 小麦 | leaf TFWT fast loss rate constant k1 after night exposure | wheat；greenhouse | 本作物 | 0.17 ✅ | 0.1–0.22 h-1 |
 | B6 | 小麦 | day/night ratio of leaf HTO uptake rate | most crops (not young lettuce)；review | 通用 | 2.8 ⚠️ | 3–5 - |
-| B22 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (day) | wheat；field box | 本作物（实测条件驱动） | 0.26 ❌（0.26–0.27） | 0.91–1.6 % |
-| B23 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (night) | wheat；field box | 本作物（实测条件驱动） | 0.04 ❌（0.04–0.04） | 0.33–0.43 % |
-| B15 | 小麦 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 0.75 ⚠️ | 0.1–0.5 - |
-| B26 | 小麦 | TLI grain (OBT at harvest / leaf TFWT at end of 1 h exposure) | wheat；field box | 本作物（实测条件驱动） | 0.31 ✅（0.31–0.31） | 0.18–0.32 % |
-| B9 | 小麦 | TFWT decrease factor from end of exposure to harvest | rice；field box | 代理 | 3 801 ✅ | 600–9.5×10⁴ - |
+| B22 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (day) | wheat；field box | 本作物（实测条件驱动） | 0.66 ⚠️（0.64–0.67） | 0.91–1.6 % |
+| B23 | 小麦 | leaf OBT (comb. water) / leaf TFWT at end of 1 h exposure (night) | wheat；field box | 本作物（实测条件驱动） | 0.13 ❌（0.13–0.13） | 0.33–0.43 % |
+| B15 | 小麦 | night/day ratio of OBT formation at equal leaf HTO | wheat, rice, potato, bean, Chlorella；review | 通用 | 0.76 ⚠️ | 0.1–0.5 - |
+| B26 | 小麦 | TLI grain (OBT at harvest / leaf TFWT at end of 1 h exposure) | wheat；field box | 本作物（实测条件驱动） | 0.3 ✅（0.3–0.3） | 0.18–0.32 % |
+| B9 | 小麦 | TFWT decrease factor from end of exposure to harvest | rice；field box | 代理 | 1×10⁴ ✅ | 600–9.5×10⁴ - |
 | B20 | 小麦 | plant OBT / plant TFWT at equilibrium (isotopic discrimination factor) | various；review | 通用 | 0.68 ✅ | 0.64–1.3 - |
 
-判定数（校准集，✅ 符合 / ⚠️ 接近 / ❌ 偏离）：马铃薯 8 / 3 / 0，小麦 6 / 6 / 2。“实测条件驱动”各行括号内为箱内阻力取 8–30 s/m 时的模型中位数。
+判定数（校准集，✅ 符合 / ⚠️ 接近 / ❌ 偏离）：马铃薯 7 / 4 / 0，小麦 6 / 7 / 1。“实测条件驱动”各行括号内为箱内阻力取 8–30 s/m 时的模型中位数。
 
 读表时注意：
 - 温室（B56–B60）和舱室实验强制通风，叶–气速率比田间偏高；田间箱实验箱内温度在暴露期间升高约 10 °C（TECDOC-1738 §7.9）。
@@ -249,7 +250,7 @@ B4（田间箱夜/昼吸收比）、B6（昼/夜交换比，综述），马铃�
    黄昏还有光时又开得太大（0.37 vs 0.06–0.18 h⁻¹）。实测的气孔清晨开得早、傍晚关得早，有昼夜节律或滞后，现有公式表达不了。
 3. **叶片 OBT 生成太慢、留存太久**：暴露结束时只有实测的 0.11 倍，4 h 时接近（0.78），1 d 时变成 2.7 倍。实测的叶片 OBT 在 1–2 h
    达到峰值后一天内运出大半，模型的茎叶 OBT 只按 10 d 半衰期周转。这正是第 5.2 节 2 的新鲜同化物库问题，时间过程给出了它的速率：
-   一天内运出。
+   一天内运出。（本节为加入同化物库之前的结果；加入之后见第 4.5 节。）
 4. **籽粒 TLI 的量级对，日内变化不对**：几何均值 1.24，但秩相关为 −0.6。实测 TLI 没有明显的日内变化（Strack et al. 2005：中位数 0.23 %），
    模型的 TLI 随暴露时刻变化：OBT 生成按辐射分配，夜间暴露后的叶片 HTO 又留到天亮。
 
@@ -257,6 +258,47 @@ B4（田间箱夜/昼吸收比）、B6（昼/夜交换比，综述），马铃�
 `RC_NIGHT` 也在这些结果上重新标定（第 4.2 节）。
 
 ![田间箱](results/figures/fig5_field_box.png)
+
+### 4.5 叶片新鲜同化物库
+
+第 4.4 节的叶片 OBT 时间过程说明，模型缺少“刚合成、随后运出或被呼吸掉”的同化物。第三步的 OBT 生成按净干物质增长，
+所以暴露结束时叶片 OBT 只有实测的 0.11 倍；茎叶 OBT 只按 10 d 半衰期周转，所以 1 d 后又是实测的 2.7 倍。现在叶片里加了第 11 个库室
+`ba`（叶片新鲜同化物 OBT，放在 `A_NAMES` 最后，前 10 个库室的编号不变）：
+
+- 叶片水 → `ba`：`ID_OBT × COMB_CH2O × 总光合 × C_leaf`，总光合取 WOFOST 的 `PGASS`（kg CH₂O，`COMB_CH2O = 0.6` 为 CH₂O 的燃烧水当量），
+  日内分配与第三步相同（白天按辐射，夜间为白天平均的 `OBT_DARK` 倍）；
+- `ba` 以停留时间 `TAU_ASSIM` 一阶流出，按当天的干物质分配去向：茎叶增长 → `bo`，籽粒/块茎增长 → `fo`，其余（呼吸、根）的氢回到叶片水。
+  所以 `bo`、`fo` 得到的 OBT 通量与第三步相同（ID × 燃烧水 × 干物质增长 × C_leaf），只是推迟约 `TAU_ASSIM`；果实 OBT 不再从叶片水直接生成；
+- 茎叶结构 OBT 的周转 `KBO_BH` 改为 0。原值 10 d 半衰期来自 UFOTRI；第三步为了保持长期平衡给它配了等量的补充生成，
+  但诊断显示这一项在正午与总光合生成一样大（f4 暴露：0.0021 对 0.0022 h⁻¹），相当于每天重新合成约 7 % 的茎叶干物质，
+  且不经同化物库直接留在茎叶里，正是 1 d 后叶片 OBT 偏高的来源。TECDOC-1991 式 43 只有生长稀释，没有周转项；
+  去掉后，生长期间形成的结构 OBT 不再回到 HTO。
+
+`TAU_ASSIM` 只影响暴露后叶片 OBT 的时间过程，所以 `calibrate_assimilate_residence.py` 只用其形状标定：田间箱 14 次暴露在 2 h、4 h、1 d 时的
+叶片 OBT 相对 1 h（暴露结束）的比值（图 27，校准集）。暴露结束时的绝对水平（B22、B23）不参与拟合，留作对生成速率的检验。
+目标函数为各暴露、各时刻模型与实测比值的 log₁₀ 差的平方和（`results/calibration_tau_assim.csv`）：
+
+| TAU_ASSIM，h | 2 | 4 | **6** | 9 | 12 | 18 | 24 | 48 |
+|---|---|---|---|---|---|---|---|---|
+| 目标函数 | 21.0 | 12.6 | **11.3** | 14.3 | 17.5 | 22.1 | 24.9 | 29.8 |
+
+保留 10 d 周转时，目标函数随 τ 减小单调下降，最优值落在网格边界（1 h），1 d 的值不随 τ 变化（2.7 倍），说明问题不在 τ。
+去掉周转后最优值落在网格内部，取 `TAU_ASSIM = 6 h`。
+
+| 叶片 OBT / 暴露结束时叶片 TFWT，% | 1 h | 2 h | 4 h | 1 d |
+|---|---|---|---|---|
+| 实测（14 次中位数） | 0.72 | 0.74 | 0.70 | 0.31 |
+| 模型，加库前（模型/实测几何均值） | 0.11 | 0.28 | 0.78 | 2.7 |
+| 模型，加库后（中位数 %；模型/实测几何均值） | 0.36；0.31 | 0.80；0.74 | 1.27；1.62 | 0.09；0.36 |
+
+对校准集的影响：白天暴露结束时的叶片 OBT（B22）0.26 % ❌ → 0.66 % ⚠️，夜间（B23）0.04 % → 0.13 %（仍 ❌）；
+马铃薯长期叶片 OBT/TFWT（B20）0.80 ✅ → 0.57 ⚠️：没有周转补充后，叶片 OBT 记录的是生长期间的叶片 HTO，而不是收获时的；
+B9（叶片 TFWT 从暴露结束到收获的降幅）3 800 → 10 000（仍 ✅），因为结构 OBT 不再分解回叶片水。
+判定数 马铃薯 8/3/0 → 7/4/0，小麦 6/6/2 → 6/7/1。
+
+仍然不对的是形状：模型在暴露后 1–3 h 叶片 HTO 还没降下去时继续生成 OBT，所以从 1 h 到 4 h 一直上升；实测在暴露结束时已经基本形成，
+之后持平，1 d 时降到约 0.3 %。一阶的单一同化物库做不到两者兼顾（τ 短则 1 d 太低，τ 长则 4 h 太高）。实测曲线提示暴露期间的标记
+比按总光合计算的快得多（例如糖类中可快速交换的氢位），这需要另一种机制，没有在这一版中加入。
 
 ## 5 发现的问题
 
@@ -306,7 +348,7 @@ default、Korea、baomi、morris 四个变体都改；UFOTRI 的常数不变。
 | ③ | `TROBT` 由潜在总同化 − 维持呼吸乘经验系数得到，与植物 HTO 库存的大小无关，昼夜不变；`kbh_fo` 是 ln2/HWZ 的一阶速率，与籽粒/块茎增长无关 | `calc_transOBT()`，TECDOC-1991 式 43：OBT 生成通量 = `ID_OBT`（0.8）× `COMB_WATER` × 干物质增长 × 叶片水比活度。茎叶（`kbh_bo`）按 TWLV + TWST 的增长再加上 `kbo_bh` 周转的补充，使长期暴露下茎叶 OBT/TFWT → 0.8；果实（`kbh_fo`）按 TWSO 的增长。日生成量按逐时辐射分配到白天，夜间为白天平均速率的 `OBT_DARK` = 0.3 倍 |
 | — | `solve_con()` 用显式 RK45，籽粒形成初期迁移率可达 10³–10⁴ h⁻¹，与矩阵指数解相差 6–100 %（review #19）；去掉果实水下限后 baomi 也受影响 | 每小时用生成矩阵的矩阵指数（迁移率在一小时内不变时是精确解）；与验证程序的结果一致到机器精度 |
 
-新增参数（`para_constant.py`）：`DMF_LEAF = 0.2`、`ID_OBT = 0.8`、`COMB_WATER = 0.556`、`KBO_BH`（原各变体中的 10 d 半衰期）、
+新增参数（`para_constant.py`）：`DMF_LEAF = 0.2`、`ID_OBT = 0.8`、`COMB_WATER = 0.556`、`KBO_BH`（原各变体中的 10 d 半衰期，后改为 0，见下）、
 `OBT_DARK = 0.3`。前四个来自文献，没有用基准调过。`OBT_DARK` 的文献范围是 0.1–0.5
 （Moses & Calvin：1/3；Thompson & Nelson：0.1；小麦叶片约 0.5，TECDOC-1738 §7.1–7.2），取的是校准基准 B15 的中值。
 `ETRM` 不再进入任何迁移率，`dmitte_morris.py` 对它的扰动不影响结果。
@@ -333,13 +375,17 @@ default、Korea、baomi、morris 四个变体都改；UFOTRI 的常数不变。
 
 **标定夜间气孔阻力系数**（本次提交）：`calc_st_res` 中写死的 15 改为 `para_constant.RC_NIGHT`，在校准集上标定为 4（第 4.2 节）。
 
+**叶片新鲜同化物库**（本次提交，第 4.5 节）：新增库室 `ba`（`A_NAMES` 第 11 个）和迁移率 `kbh_ba`、`kba_bh`、`kba_bo`、`kba_fo`
+（`K_NAMES` 末尾）；果实 OBT 改为经同化物库生成（`kbh_fo = 0`）；`KBO_BH` 10 d 半衰期 → 0；新增参数 `COMB_CH2O = 0.6`、
+`TAU_ASSIM = 6 h`（在校准集上标定）。`solve_con()` 返回 11 列；`potato_HTO.py`、`cereals_HTO.py`、`iaea-case1-HTO.py`、
+`tomatoes_HTO.py` 原来用 `As[:, -1]`、`As[:, -2]` 取果实 OBT 和 HTO，现在改为按名称 `A_INDEX['fo']`、`A_INDEX['fh']` 取。
+
 ### 5.2 仍未解决（按影响排序）
 
 1. **夜间阻力已标定（`RC_NIGHT` 15 → 4，第 4.2 节）**，用实测条件驱动的田间箱结果重新标定后仍为 4，各夜间目标都在范围内或 2 倍以内。
    B15 仍偏高（0.56–0.75，文献 0.1–0.5）：夜间暴露后叶片 HTO 有一部分留到天亮，被白天的光合作用固定。
-2. **暴露结束时叶片 OBT 偏低 3–7 倍**（B22、B23）：OBT 生成按净干物质增长 + 周转计算，长期比值正确（B20 ✅）；
-   但 1 h 内测到的 OBT 包括刚合成、随后才运出或被呼吸掉的同化物，其速率对应总光合（约每小时 2 % 叶片干重）。
-   要同时符合需要一个快速周转的同化物库（`bo → fo` 转运），属于结构改动。
+2. **叶片 OBT 的短期过程**（B22 ⚠️、B23 ❌，第 4.5 节）：加入同化物库后暴露结束时的叶片 OBT 从实测的 0.11 倍升到 0.31 倍（白天 0.66 %，文献 0.91–1.59 %），
+   但模型在暴露后 1–3 h 继续生成、4 h 时偏高 1.6 倍，实测在暴露结束时已基本形成；夜间仍低约 2.6 倍。需要比总光合更快的标记机制。
 3. **白天 1 h 吸收偏低大部分是实验设置造成的**（第 4.4 节）：用实测箱内条件和 ≤ 30 s/m 的箱内阻力驱动后，B49 在范围内。
    田间箱基准已改用实测条件驱动的结果评分。剩下的是黎明和黄昏的气孔响应（模型只随当时光照变化）。
 4. **土壤水不闭合**（第 4.3 节）：土壤–大气交换不对称（沉积用 `VDSO`、再释放用净蒸发 `ESOIL`），层间达西式（review #7）量纲不自洽。
@@ -367,6 +413,7 @@ python validation/run_validation.py         # 约 1 分钟，写 validation/resu
 python validation/analyze.py                # 对比表 + 图（只含校准集）
 python validation/calibrate_night_resistance.py  # 夜间气孔阻力系数的标定（第 4.2 节，约 5 分钟）
 python validation/scenario_field_box.py         # 实测条件驱动小麦田间箱实验（第 4.4 节，约 1 分钟）
+python validation/calibrate_assimilate_residence.py  # 同化物停留时间的标定（第 4.5 节，约 2 分钟）
 python validation/analyze.py --include-test # 只在模型修改全部完成后运行一次：评估冻结的测试集
 python -m pytest tests                      # 各步修正的回归测试
 ```

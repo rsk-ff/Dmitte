@@ -6,7 +6,7 @@ import pytest
 
 from dmitte import para_constant
 from dmitte.guassian import calc_sigmaxyz, gaussian_puff_model
-from dmitte.transfer_equotions import solve_con
+from dmitte.transfer_equotions import A_NAMES, K_NAMES, solve_con
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
@@ -42,10 +42,10 @@ def test_gaussian_puff_centerline_peak():
 def test_solve_con_conserves_activity():
     # Only a2 -> s1 transfer (index 8); total activity changes only by decay
     n_steps = 24
-    k_array = np.zeros((n_steps, 29))
+    k_array = np.zeros((n_steps, len(K_NAMES)))
     k_array[:, 8] = 0.1
     As = solve_con('HTO', 1.0, k_array, para_constant.LAMBDA_T_H)
-    assert As.shape == (n_steps + 1, 10)
+    assert As.shape == (n_steps + 1, len(A_NAMES))
     totals = As[1:].sum(axis=1)
     decay = np.exp(-para_constant.LAMBDA_T_H * np.arange(n_steps))
     np.testing.assert_allclose(totals, totals[0] * decay, rtol=1e-6)
@@ -54,7 +54,7 @@ def test_solve_con_conserves_activity():
 
 def test_solve_con_rejects_unknown_char():
     with pytest.raises(ValueError):
-        solve_con('XX', 1.0, np.zeros((2, 29)), para_constant.LAMBDA_T_H)
+        solve_con('XX', 1.0, np.zeros((2, len(K_NAMES))), para_constant.LAMBDA_T_H)
 
 
 @pytest.mark.skipif(not os.path.isdir(DATA_DIR), reason='./data not present')
@@ -95,7 +95,7 @@ def test_benchmark_test_split_is_frozen():
 
 def test_solve_con_is_exact_for_stiff_rates():
     # a2 <-> s1 exchange much faster than the hourly step: equilibrium within the first hour
-    k_array = np.zeros((3, 29))
+    k_array = np.zeros((3, len(K_NAMES)))
     k_array[:, 8] = 5000.0                      # ka2_s1
     k_array[:, 7] = 1000.0                      # ks1_a2
     As = solve_con('HTO', 1.0, k_array, 0.0)

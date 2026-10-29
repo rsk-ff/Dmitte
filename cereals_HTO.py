@@ -2,7 +2,7 @@
 from dmitte.guassian import gaussian_puff_model
 from dmitte import run_wofost
 from dmitte.calc_para import Calc_air,Calc_soil,Calc_plant
-from dmitte.transfer_equotions import transfer_rates, solve_con
+from dmitte.transfer_equotions import A_INDEX, transfer_rates, solve_con
 from dmitte.para_constant import LAMBDA_T_H, DOSE_COEF_HTO, DOSE_COEF_OBT
 
 from plot_config import *
@@ -61,10 +61,10 @@ harvest_time = 49 * 24
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-# dose_adult_potato = (As[harvest_time, -2] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
+# dose_adult_potato = (As[harvest_time, A_INDEX['fh']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_OBT + \
-                    (As[harvest_time, -2] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
+dose_adult_potato = (As[harvest_time, A_INDEX['fo']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, A_INDEX['fh']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 
 # %%
@@ -80,7 +80,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '土豆库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, -4:], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, [A_INDEX[c] for c in ('bh', 'bo', 'fh', 'fo')]], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
@@ -91,7 +91,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '所有库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:10], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(ncol=2, fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
@@ -105,7 +105,7 @@ columns_k = ['ka1_a1', 'ks0_a1', 'ka1_s0', 'ka1_a2', 'ks0_s1', 'ks0_s2', 'ks0_s3
               'ka2_s1', 'ks2_s1', 'ks1_s2', 'ks3_s2', 'ks2_s3', 'ks3_s3', 'ks1_bh', 'ks2_bh', 
               'ks3_bh', 'ka2_a2', 'kbh_a2', 'ka2_bh', 'kbh_so', 'kbh_bo', 'kbo_bh', 'kfh_bh', 
               'kbh_fh', 'kbh_fo', 'ks1_fh', 'ks2_fh', 'ks3_fh']
-columns_A = ['A_a1', 'A_s0', 'A_a2', 'A_s1', 'A_s2', 'A_s3', 'A_bh', 'A_bo', 'A_fh', 'A_fo']
+columns_A = ['A_' + c for c in A_INDEX]
 k_df = pd.DataFrame(k_array, columns=columns_k)
 # A_df = pd.DataFrame(As, columns=columns_A)
 
@@ -153,8 +153,8 @@ harvest_time = 49 * 24
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_OBT + \
-                    (As[harvest_time, -2] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
+dose_adult_potato = (As[harvest_time, A_INDEX['fo']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, A_INDEX['fh']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 
 # %%
@@ -170,7 +170,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '土豆库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, -4:], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, [A_INDEX[c] for c in ('bh', 'bo', 'fh', 'fo')]], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
@@ -181,7 +181,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '所有库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:10], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(ncol=2, fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
@@ -229,8 +229,8 @@ harvest_time = 49 * 24
 yield_potato = pcse_results['TWSO'][harvest_time] / 10000 / drymatter
 print(f'The yeild of potato is {yield_potato} kg/m2.')
 
-dose_adult_potato = (As[harvest_time, -1] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_OBT + \
-                    (As[harvest_time, -2] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
+dose_adult_potato = (As[harvest_time, A_INDEX['fo']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_OBT + \
+                    (As[harvest_time, A_INDEX['fh']] / yield_potato) * (430 / 1000 * 12 * 30) * DOSE_COEF_HTO
 print(f'The dose for a adult from potato consumption is {dose_adult_potato} mSv')
 
 # %%
@@ -246,7 +246,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '土豆库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, -4:], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, [A_INDEX[c] for c in ('bh', 'bo', 'fh', 'fo')]], label=['Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
@@ -257,7 +257,7 @@ ax.set_ylabel(r'氚浓度$\;/\;\mathrm{(Bq/m^{2})}$', fontdict={'family': 'SimSu
 # %%
 figname = '所有库室.svg'
 fig, ax = plt.subplots(figsize=(4.5, 3))
-ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
+ax.plot(np.arange(len(As[1:])) / 24, As[1:, 2:10], label=['Air', 'Soil 1', 'Soil 2', 'Soil 3', 'Body HTO', 'Body OBT', 'Root HTO', 'Root OBT'])
 ax.legend(ncol=2, fontsize="small")
 ax.set_yscale('log')
 # ax.get_yaxis().set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=100))
