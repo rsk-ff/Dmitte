@@ -76,4 +76,4 @@ python -m pytest tests                     # 62 个测试
 - A. 补充分析：用 `WHEAT_CH_HOURLY_DAY/NIGHT` 情景卡（Diabaté & Strack 1997 逐时数据，`datasets/wheat_DE_chamber_timeseries_1993.csv`，测试数据）
   驱动舱室实验，明确标注为测试后的补充分析，说明 B46 的偏差有多少来自实验条件。**已完成**：`validation/supplementary_chamber.py`，结果见 `validation/README.md` 第 4.7 节（白天叶片 TFWT 为实测 0.89 倍，B46 的偏差基本来自条件；夜间暴露后暗期叶片 OBT 偏高 7.6 倍，留给敏感性分析）。
 - B. 论文分析：动态 vs 常数迁移率（用本模型冻结时间变化的版本作基线，不用 UFOTRI）、释放日期扫描、EMRAS TC14 第 9 章假想情景
-  （仓库 Case 1/2/3 对应稳定度 1/4/6）、Morris → Sobol 敏感性分析（候选参数：RC_NIGHT 3–6、TAU_ASSIM、KBH_FH、PERCOLATION、箱内阻力等）。
+  （仓库 Case 1/2/3 对应稳定度 1/4/6）、Morris → Sobol 敏感性分析（候选参数：RC_NIGHT 3–6、TAU_ASSIM、KBH_FH、PERCOLATION、箱内阻力等）。**已完成**：`analysis/`，结果见 `analysis/README.md`（模型仍为 `4e09ac5`，未改 `dmitte/`）。
