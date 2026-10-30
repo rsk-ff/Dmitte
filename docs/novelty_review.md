@@ -93,3 +93,30 @@
 - Choi et al. 2005，*J. Environ. Radioact.*：https://www.sciencedirect.com/science/article/abs/pii/S0265931X05001396
 - IAEA TECDOC-1991：https://iaea.org/publications/15015/harmonization-and-intercomparison-of-models-for-accidental-tritium-releases-to-the-atmosphere
 - IAEA TECDOC-1738：https://iaea.org/publications/10617/transfer-of-tritium-in-the-environment-after-accidental-releases-from-nuclear-facilities
+
+---
+
+## 6 系统检索补充（2026-10-30）
+
+在 Fan 的电脑上用 OpenAlex、Crossref 系统检索：23 个指定检索式加 19 个定向检索式，去重后 1640 条，筛出 40 组相关文献
+（2015 年后 26 组、更早的关键工作 14 组）。完整清单 `docs/literature_shortlist.md`，原始结果在 Fan 电脑的
+`D:\Work\Workspace\【期刊投稿】Dmitte论文\literature_search\`（`results.csv`、`search_log.json`）。
+Semantic Scholar 没有 API key、几乎全部被限速；Scopus、WoS 需要订阅；知网连不上。筛选只看标题和摘要。
+
+**结论不变：三项主张都没有被已有文献完整覆盖。** 新增和修正：
+
+- **主张 (2) 有一个必须引用的先例**：Galeriu, Davis, Chouhan, Raskob (1995), *Fusion Technol.*, doi:10.13182/fst95-a30511，
+  对 UFOTRI 做了基于抽样的不确定性/敏感性分析，不确定性小于一个数量级，主导参数是 LAI、最小气孔阻力、产量和初始土壤水分。
+  它与本文结论方向一致（马铃薯同样由最小气孔阻力主导），但不是方差分解，也没有与释放时间比较。
+  本文的新意应写成“首次用方差分解把参数不确定性与释放时间放在同一尺度上比较”，而不是“首次做不确定性分析”。
+- **KAERI 模型已核实**：Keum 等 (2005), *Health Phys.*, doi:10.1097/01.hp.0000174811.24386.cc。用随时间变化的生长方程代替恒定产量，
+  并明确与“恒定产量”的库室模型对比。这与主张 (1) 的思路最接近，需要看全文确认它是否报告了不同生育期之间的剂量倍数。
+- **CROPTRIT 已有期刊论文**：Melintescu (2023), *Fusion Sci. Technol.*, doi:10.1080/15361055.2023.2223723（土壤动态子模型与 CROPTRIT 升级）。
+  另有 Melintescu, Galeriu, Marica (2002), *Radioprotection*（用 WOFOST 为 RODOS 氚模块推导数据库）。
+- **第 2 节需更正**：“A versatile model…”(2005) 的作者在不同来源中写法不同（Barescut 等 / Melintescu & Galeriu），以期刊页面为准再引用。
+- **新发现、需引用的近期工作**：Korolevych 等把氚模块移植到含物候的 CTEM+CLASS（*FST* 2011、*JER* 2014）；Ota 等 (2017) *JER* 的 CTEM-CLASS-TT 与 SOLVEG-II 对比；
+  IRSN TOCATTA-χ 草地小时步长模型（Le Dizès 等 2017 *JER*）；Satoh 等 (2025) *J. Hazard. Mater.*（叶菜 OBT 需考虑非光合代谢，与本文夜间 OBT 的局限相关）；
+  Priebe 等 (2026) *JER*（Craig-Gordon 模型与恒定转移因子的比较）；UFOTRI 的概率评估（Murphy 2024、Raskob 等 2026 EU DEMO）隐含了释放时刻的变异，但没有单独拆出释放日期效应。
+- **可作为补充验证数据的实验**：Polivkina 等 (2023–2024，辣椒、茄子等不同生育期暴露)、Shen & Liu (2016，大豆昼夜)、Galeriu 等 (2013) *JER* 实验汇编（应核对与本文基准的重叠并致谢）。
+
+投稿前仍需：看 Keum 2005、Melintescu 2023、Galeriu 1995 全文；补查知网（国内 CFETR/聚变堆氚事故食物链剂量）。
