@@ -37,7 +37,12 @@ CROPS = rv.CROPS
 # computed per release with Season.release_frozen_response.
 VARIANTS = ('dynamic', 'diurnal_only', 'constant')
 ALL_VARIANTS = VARIANTS + ('release_frozen',)
+# 'constant_norm' is derived from 'constant' in release_dates.py: the constant response of each season and
+# endpoint scaled so that its mean over all release hours equals that of the dynamic model. The model is linear
+# in the air concentration, so the season mean of the acute responses is the harvest response to a constant
+# (chronic) air concentration: 'constant_norm' is a constant-rate model calibrated on the chronic case.
 VARIANT_LABEL = {'dynamic': 'dynamic (hourly rates from the crop model)',
+                 'constant_norm': 'constant, calibrated on the chronic case (same season mean as dynamic)',
                  'diurnal_only': 'growth frozen (season-mean diurnal cycle of rates)',
                  'constant': 'constant (season-mean rates)',
                  'release_frozen': 'frozen at release (rates of the release hour all season)'}
@@ -100,6 +105,12 @@ class Season:
         e = np.zeros(rv.N_COMP)
         e[A_FO], e[A_FH] = DOSE_COEF_OBT / fresh, DOSE_COEF_HTO / fresh
         c['dose_per_kg'] = e                                  # mSv per kg eaten
+        e = np.zeros(rv.N_COMP)
+        e[A_FO] = DOSE_COEF_OBT / fresh
+        c['dose_obt_per_kg'] = e                              # OBT part of the dose, mSv per kg eaten
+        e = np.zeros(rv.N_COMP)
+        e[A_FH] = DOSE_COEF_HTO / fresh
+        c['dose_hto_per_kg'] = e                              # part from HTO in edible-organ water at harvest
         return list(c), np.array(list(c.values()))
 
     def release_response(self, variant):
