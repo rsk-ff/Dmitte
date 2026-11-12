@@ -52,3 +52,35 @@ def test_release_frozen_matches_forward_with_constant_rates(season):
     names, R = s.release_frozen_response(j, hours=2)
     h = s.harvest(s.forward('frozen_test', [1.0, 1.0], j)[-1])
     np.testing.assert_allclose(R.sum(axis=0), [h[n] for n in names], rtol=1e-6)
+
+
+def test_dose_is_the_sum_of_its_obt_and_hto_parts(season):
+    common, s = season
+    names, R = s.release_response('dynamic')
+    i = {n: k for k, n in enumerate(names)}
+    np.testing.assert_allclose(R[:, i['dose_obt_per_kg']] + R[:, i['dose_hto_per_kg']], R[:, i['dose_per_kg']],
+                               rtol=1e-12, atol=0)
+
+
+def test_season_mean_of_acute_responses_is_the_chronic_response(season):
+    """The identity behind the 'constant_norm' baseline: constant air HTO over a period gives the sum of the
+    hourly release responses of that period."""
+    common, s = season
+    names, R = s.release_response('constant')
+    i0, n = 600, 1200
+    h = s.harvest(s.forward('constant', np.ones(n), i0)[-1])
+    np.testing.assert_allclose(R[i0:i0 + n].sum(axis=0), [h[k] for k in names], rtol=1e-8)
+
+
+def test_phenology_runner_reproduces_the_model_wofost_run():
+    """analysis/phenology.run with no perturbation is dmitte.run_wofost.plantModel."""
+    sys.path.insert(0, os.path.join(ROOT, 'analysis'))
+    import common
+    import phenology
+    cfg = common.CROPS['wheat']
+    ref = common.rv.run_wofost.plantModel(cfg['plant_type'], [*cfg['crop'], 'ec2.soil', cfg['agro'].format(y=2006)],
+                                          ['2006-' + cfg['window'][0], '2006-' + cfg['window'][1]])
+    new = phenology.run('wheat', 2006)
+    np.testing.assert_array_equal(new[ref.columns].fillna(-9).values.astype(float), ref.fillna(-9).values.astype(float))
+    later = phenology.run('wheat', 2006, tsum1_scale=1.1)
+    assert common.rv.grain_phases(later)[0] > common.rv.grain_phases(ref)[0]

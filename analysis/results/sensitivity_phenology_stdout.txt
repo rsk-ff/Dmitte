@@ -1,0 +1,28 @@
+sobol potato 3584 runs done
+sobol wheat 3584 runs done
+
+shift of the simulated dates over the sample (days, 5 % and 95 % relative to the nominal run):
+  crop  anthesis_5  anthesis_95  lin_start_5  lin_start_95  lin_end_5  lin_end_95
+potato        -5.4          8.6         -8.0           5.6       -4.0        17.8
+ wheat        -5.0          5.1         -5.2           5.0       -3.5         5.5
+
+Sobol total index ST (log10 output); rows in brackets: 95 %/5 % ratio of the output over the sample,
+share of runs at the numerical floor, and the nominal output:
+crop                                potato                                       wheat                                   
+output                            obt_mean obt_onset obt_mid obt_end dose_mid obt_mean obt_onset obt_mid obt_end dose_mid
+parameter                                                                                                                
+RC_NIGHT                             0.000     0.000   0.004   0.000    0.005    0.000     0.000   0.003   0.000    0.003
+TAU_ASSIM                            0.000     0.002   0.009   0.021    0.000    0.000     0.005   0.001   0.023    0.001
+KBH_FH_HALF_LIFE_H                   0.000     0.000   0.000   0.000    0.191    0.000     0.000   0.000   0.000    0.000
+PERCOLATION                          0.001     0.000   0.007   0.000    0.011    0.023     0.002   0.000   0.000    0.002
+OBT_DARK                             0.000     0.027   0.048   0.050    0.010    0.000     0.001   0.056   0.045    0.057
+ID_OBT                               0.891     0.336   0.807   0.443    0.138    0.864     0.032   0.852   0.453    0.857
+DMF_LEAF                             0.000     0.016   0.023   0.025    0.034    0.000     0.001   0.026   0.024    0.027
+RCMIN_SCALE                          0.023     0.001   0.003   0.008    0.304    0.040     0.003   0.001   0.013    0.002
+TSUM1_SCALE                          0.001     0.012   0.001   0.008    0.006    0.028     0.939   0.099   0.493    0.086
+TSUM2_SCALE                          0.074     0.160   0.067   0.129    0.066    0.025     0.000   0.004   0.032    0.005
+START_SHIFT                          0.020     0.438   0.035   0.360    0.237    0.000     0.009   0.013   0.003    0.013
+(spread, all parameters)             1.640     2.247   1.665   2.007    1.912    1.624     9.166   1.677   2.008    1.649
+(spread, tritium parameters only)    1.574     1.646   1.626   1.687    1.721    1.617     1.603   1.610   1.695    1.602
+(share at floor)                     0.000     0.000   0.000   0.000    0.000    0.000     0.000   0.000   0.000    0.000
+(nominal, log10)                   -11.767   -11.499 -11.477 -11.514  -11.124  -11.151   -10.654 -10.913 -10.831  -10.908
