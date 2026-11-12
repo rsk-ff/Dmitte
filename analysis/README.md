@@ -9,6 +9,8 @@ analysis/
 ├── release_dates.py     # B1 动态 vs 常数迁移率 + 释放日期扫描（约 1 分钟）
 ├── emras_scenarios.py   # B2 假想事故释放 Case 1/2/3（约 1 分钟）
 ├── sensitivity.py       # B3 Morris 筛选 → Sobol 指数（4 核约 30 分钟）
+├── phenology.py         # 带物候扰动的 WOFOST 运行（不改 dmitte/）
+├── sensitivity_phenology.py  # B4 固定日历日期释放 + 物候参数的 Sobol（4 核约 1.5 小时）
 └── results/             # CSV、标准输出、figures/
 ```
 
@@ -17,6 +19,7 @@ python validation/build_inputs.py      # 先生成 ./data
 python analysis/release_dates.py | tee analysis/results/release_dates_stdout.txt
 python analysis/emras_scenarios.py | tee analysis/results/emras_scenarios_stdout.txt
 OMP_NUM_THREADS=1 python analysis/sensitivity.py --jobs 4 | tee analysis/results/sensitivity_stdout.txt
+OMP_NUM_THREADS=1 python analysis/sensitivity_phenology.py --jobs 4 | tee analysis/results/sensitivity_phenology_stdout.txt
 python -m pytest tests/test_analysis.py   # 伴随法 = 正向计算、叠加原理、冻结基线
 ```
 
@@ -173,6 +176,42 @@ S1 与 ST 几乎相等（参数之间交互很弱）。
 - **在校准集上标定的两个参数（RC_NIGHT、TAU_ASSIM）对剂量几乎没有影响**（ST ≤ 0.05），标定误差不会传到剂量。OBT_DARK 只影响小麦灌浆期释放（ST 0.06–0.07）。
   不过舱室补充分析（`validation/README.md` 第 4.7 节）显示暗期 OBT 生成的形式本身可能不对，这一点敏感性分析覆盖不到。
 - 进一步可做：把释放日期本身作为一个“参数”放进 Sobol，直接给出它与参数不确定性的方差分解。
+
+## 4b B4 固定日历日期释放、物候不确定时的敏感性分析（2026-11-11 补充）
+
+第 4 节固定了作物日历，释放时刻按模拟出的生育期来放（“灌浆中期”）。实际评价中释放有一个日历日期，那一天作物处在哪个发育期本身是不确定的。
+`sensitivity_phenology.py` 把第 4 节筛选后的 8 个氚迁移参数与 3 个 WOFOST 物候参数一起做 Sobol（N = 256，每种作物 3 328 次，
+另加 256 次物候固定的对照）：`TSUM1_SCALE`、`TSUM2_SCALE` 0.9–1.1（出苗→开花/块茎起始、开花→成熟的积温乘数），`START_SHIFT` ±10 d
+（小麦播种期、马铃薯出苗期）。这是合理性范围，不是标定后验；它使模拟的开花期移动约 ±5 d（小麦 −5.0 到 +5.1 d，5–95 %），
+马铃薯线性膨大期开始 −8.0 到 +5.6 d、结束 −4.0 到 +17.8 d。WOFOST 由 `phenology.py` 带参数覆盖重新运行，不带扰动时与
+`run_wofost.plantModel` 的输出逐位相同（`tests/test_analysis.py`），没有修改 `dmitte/`。
+
+输出：OBT 部分的剂量（各季几何平均，log10），12:00 释放，释放日期取名义运行中线性增长期的开始、中点、结束的**日历日期**；
+另有季均 OBT 剂量和中点释放的总剂量。Sobol 总指数 ST（`results/sobol_phenology.csv`）：
+
+| 参数 | 马铃薯 季均 | 开始 | 中点 | 结束 | 中点总剂量 | 小麦 季均 | 开始 | 中点 | 结束 | 中点总剂量 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ID_OBT | **0.89** | 0.34 | **0.81** | **0.44** | 0.14 | **0.86** | 0.03 | **0.85** | 0.45 | **0.86** |
+| RCMIN 乘数 | 0.02 | 0.00 | 0.00 | 0.01 | **0.30** | 0.04 | 0.00 | 0.00 | 0.01 | 0.00 |
+| KBH_FH | 0.00 | 0.00 | 0.00 | 0.00 | 0.19 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| OBT_DARK | 0.00 | 0.03 | 0.05 | 0.05 | 0.01 | 0.00 | 0.00 | 0.06 | 0.05 | 0.06 |
+| TSUM1_SCALE | 0.00 | 0.01 | 0.00 | 0.01 | 0.01 | 0.03 | **0.94** | 0.10 | **0.49** | 0.09 |
+| TSUM2_SCALE | 0.07 | 0.16 | 0.07 | 0.13 | 0.07 | 0.03 | 0.00 | 0.00 | 0.03 | 0.01 |
+| START_SHIFT | 0.02 | **0.44** | 0.04 | 0.36 | 0.24 | 0.00 | 0.01 | 0.01 | 0.00 | 0.01 |
+| 其余（RC_NIGHT、TAU_ASSIM、PERCOLATION、DMF_LEAF） | ≤ 0.02 | ≤ 0.02 | ≤ 0.02 | ≤ 0.03 | ≤ 0.03 | ≤ 0.02 | ≤ 0.01 | ≤ 0.03 | ≤ 0.02 | ≤ 0.03 |
+| 输出 95 %/5 % 比，全部参数 | 1.64 | 2.25 | 1.67 | 2.01 | 1.91 | 1.62 | **9.17** | 1.68 | 2.01 | 1.65 |
+| 输出 95 %/5 % 比，只变氚迁移参数 | 1.57 | 1.65 | 1.63 | 1.69 | 1.72 | 1.62 | 1.60 | 1.61 | 1.70 | 1.60 |
+
+![固定日历日期的敏感性](results/figures/fig_b4_sensitivity_phenology.png)
+
+结论：
+- **物候不确定性只在贮藏器官开始生长的那几天要紧。** 小麦在名义开花日（线性灌浆开始）释放时，约 ±5 d 的开花期不确定性使 OBT 剂量的
+  95 %/5 % 比从 1.6 升到 9.2，几乎全部由 TSUM1 解释（ST 0.94）。在灌浆中点，加入物候后范围仍是 1.7 倍；灌浆结束时 2.0 倍（TSUM1 的 ST 0.49）。
+- **马铃薯对物候不敏感**：加入物候后范围 1.6–2.2 倍。影响最大的是出苗期（开始和结束日期的 ST 0.36–0.44）。
+- 因此第 4 节的结论要加一个限定：**除了贮藏器官开始生长前后约一周内的释放，参数不确定性（含约 ±5 d 的物候不确定性）造成的范围在 2 倍左右**；
+  在那一周内，需要知道的是作物的实际发育期，而不是氚迁移参数。
+- 季均 OBT 剂量和灌浆中点释放的 OBT 剂量仍由 ID_OBT 主导（ST 0.81–0.89）。马铃薯中点释放的总剂量由 RCMIN、出苗期和 KBH_FH 决定，
+  因为它以块茎水 HTO 为主（第 2.1 节）。
 
 ## 5 局限
 

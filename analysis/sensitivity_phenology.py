@@ -164,7 +164,7 @@ def figure(s):
         for sp in ('top', 'right'):
             ax.spines[sp].set_visible(False)
     axes[0].set_ylabel('Sobol total index ST')
-    axes[0].legend(fontsize=7.5, frameon=False, loc='upper left')
+    axes[1].legend(fontsize=7.5, frameon=False, loc='upper left')
     fig.tight_layout()
     fig.savefig(os.path.join(c.FIG, 'fig_b4_sensitivity_phenology.png'), dpi=150)
 
